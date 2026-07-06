@@ -1,509 +1,310 @@
-# CHANGELOG
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v8.2.0 - 2026-06-08
+---
 
-### What's Changed
+## [8.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v8.1.1...v8.2.0) (2026-06-08)
 
-#### 🚀 Features
 
-* feat: support for attaching additional variable sets to a project (#84) @mlflr
+### 🚀 Features
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v8.1.1...v8.2.0
+* support for attaching additional variable sets to a project ([#84](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/84)) ([53f0d96](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/53f0d96df077ffe2ca2322e1376bcac3e724719d))
 
-## v8.1.1 - 2026-06-02
+## [8.1.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v8.1.0...v8.1.1) (2026-06-02)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🐛 Fixes
 
-* fix: project variable set is not attached to workspaces (#83) @mlflr
+* project variable set is not attached to workspaces ([#83](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/83)) ([1f90834](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/1f90834b55235ebccc374b3d4586f52cda1d1446))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v8.1.0...v8.1.1
+## [8.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v8.0.0...v8.1.0) (2026-06-02)
 
-## v8.1.0 - 2026-06-02
 
-### What's Changed
+### 🚀 Features
 
-Note: This release requires Terraform version 1.12 or newer
+* support for tfe_project settings ([#82](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/82)) ([30bbc24](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/30bbc24fe885ccc23a08779bc4a47b58e832ca46))
 
-#### 🚀 Features
+### 🐛 Fixes
 
-* feat: support for tfe_project settings (#82) @mlflr
+* Correct optional alias variable ([#81](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/81)) ([c93c607](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/c93c607e7e0773613f44e17be05281a76b7f0876))
 
-#### 🐛 Bug Fixes
+## [8.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v7.0.0...v8.0.0) (2026-04-01)
 
-* fix: Correct optional alias variable (#81) @fatbasstard
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v8.0.0...v8.1.0
+### ⚠ BREAKING CHANGES
 
-## v8.0.0 - 2026-04-01
+* known after apply issues with tfe project ([#80](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/80))
 
-### What's Changed
+### 🐛 Fixes
 
-#### 🐛 Bug Fixes
+* known after apply issues with tfe project ([#80](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/80)) ([4c190b0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/4c190b0c9257041199ba1b55661b7dce78b277cd))
 
-* fix!: known after apply issues with tfe project (#80) @marwinbaumannsbp
+## [7.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.4.0...v7.0.0) (2026-03-19)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v7.0.0...v8.0.0
 
-## v7.0.0 - 2026-03-19
+### ⚠ BREAKING CHANGES
 
-### What's Changed
+* remove deprecated var `workspace_tags`, rename `project_id` to `project_name`, add support for TFE Project scoped AWS access ([#79](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/79))
 
-#### 🚀 Features
+### 🚀 Features
 
-* feat!: remove deprecated var `workspace_tags`, rename `project_id` to `project_name`, add support for TFE Project scoped AWS access (#79) @marwinbaumannsbp
+* remove deprecated var `workspace_tags`, rename `project_id` to `project_name`, add support for TFE Project scoped AWS access ([#79](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/79)) ([c466541](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/c466541fc411768b9f3beb7e5173d6d116ad4073))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.4.0...v7.0.0
+## [6.4.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.3.0...v6.4.0) (2025-11-24)
 
-## v6.4.0 - 2025-11-24
 
-### What's Changed
+### 🚀 Features
 
-#### 🚀 Features
+* Improve trigger pattern flexibility ([#78](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/78)) ([498b2b2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/498b2b2258b48fa20c66038e9fc92fc16639910a))
 
-* feat: Improve trigger pattern flexibility (#78) @marwinbaumannsbp
+### 🐛 Fixes
 
-#### 🐛 Bug Fixes
+* set file_triggers_enabled to false when no vcs is connected instead to null to comply with underlying module structure ([#77](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/77)) ([ed91059](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/ed910598aa596bdd8b905a151be9d2374b4550d4))
 
-* fix: set file_triggers_enabled to false when no vcs is connected instead to null to comply with underlying module structure (#77) @marwinbaumannsbp
+## [6.3.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.2.2...v6.3.0) (2025-11-19)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.3.0...v6.4.0
 
-## v6.3.0 - 2025-11-19
+### 🚀 Features
 
-### What's Changed
+* upgrade mcaf-workspace to v2.6.0 ([#76](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/76)) ([21d68af](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/21d68af7f400d960a8f07e2b78b00e9e62a950b2))
 
-#### 🚀 Features
+## [6.2.2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.2.1...v6.2.2) (2025-04-29)
 
-* feat: upgrade mcaf-workspace to v2.6.0 (#76) @marwinbaumannsbp
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.2.2...v6.3.0
+### 🐛 Fixes
 
-## v6.2.2 - 2025-04-29
+* output permission boundary names ([#73](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/73)) ([94ccc34](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/94ccc34451e680d53ee4217246fce5813e8a45aa))
 
-### What's Changed
+## [6.2.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.2.0...v6.2.1) (2025-03-28)
 
-#### 🐛 Bug Fixes
 
-* fix: output permission boundary names (#73) @marwinbaumannsbp
+### 🐛 Fixes
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.2.1...v6.2.2
+* set default for var.tfe_workspace.set_working_directory to true ([#72](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/72)) ([200bf09](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/200bf09aded2433794e02a6f4ebc16fa2f37ea7e))
 
-## v6.2.1 - 2025-03-28
+## [6.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.1.0...v6.2.0) (2025-03-26)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🚀 Features
 
-* fix: set default for var.tfe_workspace.set_working_directory to true (#72) @sbkg0002
+* enhancement: Ignore terraform_version when "" is provided in var.additional_tfe_workspaces.terraform_version ([#71](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/71)) ([5a30bdf](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/5a30bdfdb4afbd0faefb0c0553f9387c79016d19))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.2.0...v6.2.1
+## [6.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.0.1...v6.1.0) (2025-03-17)
 
-## v6.2.0 - 2025-03-26
 
-### What's Changed
+### 🚀 Features
 
-#### 🚀 Features
+* enhancement: bump aws-mcaf-workspace to 2.5.x ([#70](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/70)) ([4701d5d](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/4701d5dfe05404fdd55a6403bc37e9d4878a70da))
 
-* enhancement: Ignore terraform_version when "" is provided in var.additional_tfe_workspaces.terraform_version (#71) @sbkg0002
+## [6.0.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v6.0.0...v6.0.1) (2025-02-27)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.1.0...v6.2.0
 
-## v6.1.0 - 2025-03-17
+### 🐛 Fixes
 
-### What's Changed
+* bug: allow the working directory to not be set ([#69](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/69)) ([c555218](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/c5552188f94b855ef96f5d51502aafc9d4a1d977))
 
-Note: This version bumps the Terraform required version to `>= 1.7.0`, due to dependency requirements.
+## [6.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v5.0.0...v6.0.0) (2025-02-26)
 
-#### 🚀 Features
 
-* enhancement: bump aws-mcaf-workspace to 2.5.x (#70) @mlflr
+### 🚀 Features
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.0.1...v6.1.0
+* breaking: generate the role from name if supplied ([#68](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/68)) ([6b292d1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/6b292d195dafd1b2e809f4621abd05a7d721997b))
 
-## v6.0.1 - 2025-02-27
+## [5.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.4.0...v5.0.0) (2025-02-24)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🚀 Features
 
-* bug: allow the working directory to not be set (#69) @marwinbaumannsbp
+* breaking: deprecate trigger_prefixes ([#67](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/67)) ([55cbc52](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/55cbc52b4e04a41ddca4d9c14e465ddbed10deec))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v6.0.0...v6.0.1
+## [4.4.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.3.1...v4.4.0) (2025-01-28)
 
-## v6.0.0 - 2025-02-26
 
-### What's Changed
+### 🚀 Features
 
-#### 🚀 Features
+* Add speculative_enabled option ([#66](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/66)) ([8815393](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/881539360181d2fe8f65ce08795ef2cb1d0decb2))
 
-* breaking: generate the role from name if supplied (#68) @Plork
+## [4.3.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.3.0...v4.3.1) (2025-01-10)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v5.0.0...v6.0.0
 
-## v5.0.0 - 2025-02-24
+### 🐛 Fixes
 
-### What's Changed
+* solve issue with using coalesce on null values ([#65](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/65)) ([5ec1e77](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/5ec1e7731953bd8419817fbe60e8f2d2ab117283))
 
-#### 🚀 Features
+## [4.3.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.2.0...v4.3.0) (2025-01-10)
 
-* breaking: deprecate trigger_prefixes (#67) @noobnesz
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.4.0...v5.0.0
+### 🚀 Features
 
-## v4.4.0 - 2025-01-28
+* Support GitHub app for VCS connections, solve deprecation warnings ([#64](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/64)) ([d9c7c4f](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/d9c7c4f998c2252aa598e5f77c0d5dda0de550e5))
 
-### What's Changed
+## [4.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.1.0...v4.2.0) (2024-10-29)
 
-#### 🚀 Features
 
-* feat(options): Add speculative_enabled option  (#66) @stromp
+### 🚀 Features
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.3.1...v4.4.0
+* add the region environmental variable to the variable set instead of to each workspace ([#63](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/63)) ([b7eb028](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/b7eb028f291133abf13849169d32988fe3f2505d))
 
-## v4.3.1 - 2025-01-10
+## [4.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.0.3...v4.1.0) (2024-09-19)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🚀 Features
 
-* fix: solve issue with using coalesce on null values (#65) @marwinbaumannsbp
+* enhancement: bumps aws-mcaf-workspace module, note this version recreates the variable AWS_DEFAULT_REGION. ([#62](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/62)) ([f95e9cc](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/f95e9cc21b1905a6ca3fdf11a52e9f50439da6dc))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.3.0...v4.3.1
+## [4.0.3](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.0.2...v4.0.3) (2024-08-08)
 
-## v4.3.0 - 2025-01-10
 
-### What's Changed
+### 🐛 Fixes
 
-#### 🚀 Features
+* resolving an error in the inheritance behaviour of `notification_configuration` and `team_access` ([#61](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/61)) ([0b35c0d](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/0b35c0d1d19906f9d08b556f936bd8ad16c7d26e))
 
-* feature: Support GitHub app for VCS connections, solve deprecation warnings (#64) @marwinbaumannsbp
+## [4.0.2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.0.1...v4.0.2) (2024-08-07)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.2.0...v4.3.0
 
-## v4.2.0 - 2024-10-29
+### 🐛 Fixes
 
-### What's Changed
+* modify notification-settings behaviour to take "tfe_workspace"  value ([#60](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/60)) ([b081e51](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/b081e510f863b02fb5ea96df053a225d93d5604e))
 
-#### 🚀 Features
+## [4.0.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v4.0.0...v4.0.1) (2024-08-06)
 
-* feature: add the region environmental variable to the variable set instead of to each workspace (#63) @marwinbaumannsbp
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.1.0...v4.2.0
+### 🐛 Fixes
 
-## v4.1.0 - 2024-09-19
+* merge var.account_variable_set.clear_text_terraform_variables into local ([#59](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/59)) ([31e12ee](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/31e12eecada2d296b3dcc5c800e28a71c5f1e991))
 
-### What's Changed
+## [4.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v3.0.3...v4.0.0) (2024-08-05)
 
-#### 🚀 Features
 
-* enhancement: bumps aws-mcaf-workspace module, note this version recreates the variable AWS_DEFAULT_REGION. (#62) @stefanwb
+### 🚀 Features
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.0.3...v4.1.0
+* breaking: solve bug where `notification_configuration` can not contain sensitive values or values known after apply ([#58](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/58)) ([369f0f9](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/369f0f912b4c6a1e60bbf4cabc2bacf5422be2f3))
+* account variable set ([#55](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/55)) ([3e83deb](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/3e83deb4a246019ae3e54e54b82684d480c59596))
+* breaking: set default auth mode from 'iam_user' to 'iam_role_oidc' and modify outputs ([#57](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/57)) ([f0c9bfb](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/f0c9bfb30931fc0672e1cf691bd3482e0e644dd1))
+* add support for the newest variables in mcaf-workspace, set `assessments_enabled` to true by default as is best practise, optimize optionals ([#56](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/56)) ([a1ffe67](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/a1ffe67e0b5c7d549c8c4ae3be7bbc5157d54bd2))
 
-## v4.0.3 - 2024-08-08
+### 🐛 Fixes
 
-### What's Changed
+* breaking: solve bug where `notification_configuration` can not contain sensitive values or values known after apply ([#58](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/58)) ([369f0f9](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/369f0f912b4c6a1e60bbf4cabc2bacf5422be2f3))
 
-#### 🐛 Bug Fixes
+## [3.0.3](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v3.0.2...v3.0.3) (2024-05-16)
 
-* fix: resolving an error in the inheritance behaviour of `notification_configuration` and `team_access` (#61) @marwinbaumannsbp
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.0.2...v4.0.3
+### 🐛 Fixes
 
-## v4.0.2 - 2024-08-07
+* add workspace_permissions_boundary_arn output ([#53](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/53)) ([d12cbba](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/d12cbba6b6e3db2373a29d0a8037dcea2711b537))
 
-### What's Changed
+## [3.0.2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v3.0.1...v3.0.2) (2024-04-30)
 
-#### 🐛 Bug Fixes
 
-* fix: modify notification-settings behaviour to take "tfe_workspace"  value (#60) @marwinbaumannsbp
+### 🐛 Fixes
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.0.1...v4.0.2
+* Setting `working_directory` shouldn't depend on a VCS connection ([#49](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/49)) ([00c2508](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/00c2508972e6995832c4b7231807bf3679022329))
 
-## v4.0.1 - 2024-08-06
+## [3.0.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v3.0.0...v3.0.1) (2024-03-04)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🐛 Fixes
 
-* fix: merge var.account_variable_set.clear_text_terraform_variables into local (#59) @jorrite
+* Add outputs for other modules to consume ([#52](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/52)) ([15be1e8](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/15be1e81e6f30565d601439abf45f8da1680e441))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v4.0.0...v4.0.1
+## [3.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.12.0...v3.0.0) (2024-03-01)
 
-## v4.0.0 - 2024-08-05
 
-### What's Changed
+### 🚀 Features
 
-#### 🚀 Features
+* breaking: update notification variables & add workspace tags for workspace submodule ([#51](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/51)) ([fb7adf6](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/fb7adf648f30ca54147b455bad8aa2f5246f093b))
 
-* breaking: solve bug where `notification_configuration` can not contain sensitive values or values known after apply (#58) @marwinbaumannsbp
-* feat: account variable set (#55) @jorrite
-* breaking: set default auth mode from 'iam_user' to 'iam_role_oidc' and modify outputs (#57) @marwinbaumannsbp
-* feature: add support for the newest variables in mcaf-workspace, set `assessments_enabled` to true by default as is best practise, optimize optionals (#56) @marwinbaumannsbp
+## [2.12.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.11.0...v2.12.0) (2024-02-22)
 
-#### 🐛 Bug Fixes
 
-* breaking: solve bug where `notification_configuration` can not contain sensitive values or values known after apply (#58) @marwinbaumannsbp
+### 🚀 Features
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v3.0.3...v4.0.0
+* make all runs configurable ([#50](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/50)) ([f738ae6](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/f738ae652989377610034088a60442089e5865d3))
 
-## v3.0.3 - 2024-05-16
+## [2.11.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.10.0...v2.11.0) (2023-09-07)
 
-### What's Changed
 
-#### 🐛 Bug Fixes
+### 🚀 Features
 
-* fix: add workspace_permissions_boundary_arn output (#53) @marwinbaumannsbp
+* Add OIDC support ([#48](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/48)) ([f2f734f](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/f2f734f6a1e6467d51e18c723940907f93cd0871))
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v3.0.2...v3.0.3
+## [2.10.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.9.0...v2.10.0) (2023-06-07)
 
-## v3.0.2 - 2024-04-30
 
-### What's Changed
+### 🚀 Features
 
-#### 🐛 Bug Fixes
+* make permissions boundary conditional for workspaces ([#47](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/47)) ([5602557](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/560255748bd26f85c3ea4cd445b1e5bb15704620))
+* make permissions boundary conditional for workspaces ([#47](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/47)) ([5602557](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/560255748bd26f85c3ea4cd445b1e5bb15704620))
 
-* fix: Setting `working_directory` shouldn't depend on a VCS connection (#49) @borisroman
+## [2.9.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.8.0...v2.9.0) (2023-05-26)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v3.0.1...v3.0.2
 
-## v3.0.1 - 2024-03-04
+### 🚀 Features
 
-### What's Changed
+* do not set certain vcs related values when `connect_vcs_repo` has been set to false ([#46](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/46)) ([d8b13ab](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/d8b13ab547638e82cee03d9b55a9333ea7fcf1fd))
 
-#### 🐛 Bug Fixes
+## [2.8.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.7.1...v2.8.0) (2023-04-24)
 
-* fix(output): Add outputs for other modules to consume (#52) @shoekstra
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v3.0.0...v3.0.1
+### 🚀 Features
 
-## v3.0.0 - 2024-03-01
+* make the creation of TFE repositories optional ([#44](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/44)) ([3756dc1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/3756dc1b80bcca32198577837b7e2d228344171b))
+* make the creation of TFE repositories optional ([#44](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/44)) ([3756dc1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/3756dc1b80bcca32198577837b7e2d228344171b))
 
-### What's Changed
+## [2.7.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.7.0...v2.7.1) (2023-04-03)
 
-#### 🚀 Features
+## [2.7.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.6.0...v2.7.0) (2023-02-02)
 
-* breaking: update notification variables & add workspace tags for workspace submodule (#51) @marlonparmentier
+## [2.6.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.5.0...v2.6.0) (2023-01-24)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.12.0...v3.0.0
+## [2.5.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.4.0...v2.5.0) (2023-01-20)
 
-## v2.12.0 - 2024-02-22
+## [2.4.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.3.1...v2.4.0) (2023-01-18)
 
-### What's Changed
+## [2.3.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.3.0...v2.3.1) (2023-01-17)
 
-#### 🚀 Features
+## [2.3.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.2.0...v2.3.0) (2023-01-16)
 
-* feature: make all runs configurable (#50) @stromp
+## [2.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.1.1...v2.2.0) (2023-01-12)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.11.0...v2.12.0
+## [2.1.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.1.0...v2.1.1) (2023-01-11)
 
-## v2.11.0 - 2023-09-07
+## [2.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.0.1...v2.1.0) (2023-01-03)
 
-### What's Changed
+## [2.0.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v2.0.0...v2.0.1) (2022-12-12)
 
-#### 🚀 Features
+## [2.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v1.2.1...v2.0.0) (2022-11-15)
 
-- feat: Add OIDC support (#48) @wvanheerde
+## [1.2.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v1.2.0...v1.2.1) (2022-01-27)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.10.0...v2.11.0
+## [1.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v1.1.0...v1.2.0) (2022-01-14)
 
-## v2.10.0 - 2023-06-07
+## [1.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v1.0.0...v1.1.0) (2021-12-29)
 
-### What's Changed
+## [1.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.4.1...v1.0.0) (2021-11-16)
 
-#### 🚀 Features
+## [0.4.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.4.0...v0.4.1) (2021-10-13)
 
-- feat: make permissions boundary conditional for workspaces (#47) @sbkg0002
+## [0.4.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.3.2...v0.4.0) (2021-09-16)
 
-#### 📖 Documentation
+## [0.3.2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.3.0...v0.3.2) (2021-04-07)
 
-- feat: make permissions boundary conditional for workspaces (#47) @sbkg0002
+## [0.3.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.3.1...v0.3.0) (2021-04-02)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.9.0...v2.10.0
+## [0.3.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.2.3...v0.3.1) (2021-04-02)
 
-## v2.9.0 - 2023-05-26
+## [0.2.3](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.2.2...v0.2.3) (2021-03-26)
 
-### What's Changed
+## [0.2.2](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.2.0...v0.2.2) (2021-03-24)
 
-#### 🚀 Features
+## [0.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.2.1...v0.2.0) (2021-03-23)
 
-- feat: do not set certain vcs related values when `connect_vcs_repo` has been set to false (#46) @davealtenasbp
+## [0.2.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v0.1.0...v0.2.1) (2021-03-23)
 
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.8.0...v2.9.0
+## 0.1.0 (2021-02-26)
 
-## v2.8.0 - 2023-04-24
-
-### What's Changed
-
-- Remove workflows (#40) @shoekstra
-
-#### 🚀 Features
-
-- feat: make the creation of TFE repositories optional (#44) @davealtenasbp
-
-#### 📖 Documentation
-
-- feat: make the creation of TFE repositories optional (#44) @davealtenasbp
-
-**Full Changelog**: https://github.com/schubergphilis/terraform-aws-mcaf-avm/compare/v2.7.1...v2.8.0
-
-## 2.7.1 - 2023-02-15
-
-- Add default_tags to provider configuration. ([#39] https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/39))
-
-## 2.7.0 - 2023-02-02
-
-- Changed agent_role_arn to agent_role_arns, to support multiple agent pools to assume the role. ([#38] https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/38))
-
-## 2.6.0 - 2023-01-24
-
-- Add path variable which can be used to set a path for all supported IAM resources  ([#37] https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/37))
-
-## 2.5.0 - 2023-01-20
-
-- Add path variable to the tfe_workspace and additional_tfe_workspace ([#35] https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/35))
-
-## 2.4.0 - 2023-01-18
-
-- Bumped [terraform-aws-mcaf-workspace](https://github.com/schubergphilis/terraform-aws-mcaf-workspace) module to v0.13.0: Adds support to specify workspace project ID ([#36](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/36))
-
-## 2.3.1 - 2023-01-17
-
-- Create additional Terraform Cloud workspace variable when permissions boundaries are configured. ([#34](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/34))
-
-## 2.3.0 - 2023-01-16
-
-- Adds support for setting alternate contacts on account level ([#30](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/30))
-
-## 2.2.0 - 2023-01-12
-
-- Adds support for permissions boundaries by adding 'workspace_boundary' and 'workload_boundary' IAM policies ([#31](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/31))
-
-## 2.1.1 - 2023-01-11
-
-BUG FIXES
-
-- Fix `clear_text_terraform_variables` in additional workspaces ([#32](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/32))
-
-## 2.1.0 - 2023-01-03
-
-- Bumped [terraform-aws-mcaf-workspace](https://github.com/schubergphilis/terraform-aws-mcaf-workspace) module to v0.10.0: Adds support to use custom workspace permissions ([#29](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/29))
-
-ENHANCEMENTS
-
-## 2.0.1 - 2022-12-12
-
-ENHANCEMENTS
-
-- `aws_assume_role_external_id` will now be set to `sensitive` in Terraform Cloud workspaces in order to prevent `assume_role` leakage ([#28](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/28))
-
-## 2.0.0 - 2022-11-15
-
-BUG FIXES
-
-- The `working_directory` variable defaulted to "terraform" instead of "terraform/${var.account.environment}" as is expected behaviour ([#25](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/25))
-
-ENHANCEMENTS
-
-- Update existing variables to support `optional` now that Terraform 1.3 -- Please see [UPGRADING.md](./UPGRADING.md) for more information ([#24](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/24))
-- Bumped [terraform-aws-mcaf-account](https://github.com/schubergphilis/terraform-aws-mcaf-account) module to v0.5.1: Adds support to specify an OU path to provision an account into a nested OU ([#23](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/23))
-- Modify variables to optional variables in the `additional_tfe_workspaces` and `tfe_workspace_settings` variable and add support for setting the workspace team access ([#22](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/22))
-- Bumped [terraform-aws-mcaf-workspace](https://github.com/schubergphilis/terraform-aws-mcaf-workspace) to v0.9.0 to support using IAM roles as a way for workspaces to authenticate to AWS (instead of creating an IAM user) ([#21](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/21))
-- Inherit more from `var.tfe_workspace` ([#26](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/26))
-- Use CamelCase to compute additional workspace IAM role or usernames ([#27](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/27))
-
-## 1.2.1 - 2022-01-27
-
-BUG FIXES
-
-- Bumped terraform-aws-mcaf-workspace module to v0.7.1: Fix IAM user group attachment when not specifying additional groups ([#20](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/20))
-
-## 1.2.0 - 2022-01-14
-
-ENHANCEMENTS
-
-- Bumped terraform-aws-mcaf-workspace module to v0.7.0 ([#19](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/19))
-
-## 1.1.0 - 2021-12-29
-
-ENHANCEMENTS
-
-- Bumped terraform-aws-mcaf-avm module to v0.5.0 and removed "create_email_address" from account settings ([#18](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/18))
-
-## 1.0.0 - 2021-11-16
-
-ENHANCEMENTS
-
-- Update tfe_workspace to support setting a Terraform working directory directly ([#17](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/17))
-- Bump terraform-aws-mcaf-workspace module to v0.6.0 to add support for managing global remote state ([#17](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/17))
-
-## 0.4.1 - 2021-10-13
-
-ENHANCEMENTS
-
-- Updates tfe_workspace to also set clear_text_terraform_variables in the workspace so it works the same as additional_tfe_workspaces ([#16](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/16))
-
-## 0.4.0 - 2021-09-16
-
-ENHANCEMENTS
-
-- Adds account_settings.create_email_address variable ([#15](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/15))
-- GH provider has been moved to intergations/ ([#12](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/12))
-- Bumps terraform-aws-mcaf-workspace module to mitigate warning: does not declare a provider ([#11](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/11))
-- Update terraform-aws-mcaf-workspace to v0.5.0 ([#10](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/10))
-
-BUG FIXES
-
-- Removes vars that should've been updated when bumping workspace module from 0.3.x to 0.5.x ([#13](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/13))
-
-## 0.3.2 - 2021-04-07
-
-ENHANCEMENTS
-
-- Add support for custom username name ([#9](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/9))
-
-## 0.3.1 - 2021-04-02
-
-ENHANCEMENTS
-
-- Add support for custom workspace name ([#8](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/8))
-
-## 0.3.0 - 2021-04-01
-
-ENHANCEMENTS
-
-- Add support for all available terraform-aws-mcaf-workspace module variables ([#7](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/7))
-
-## 0.2.3 - 2021-03-26
-
-BUG FIXES
-
-- Fix bug in `additional_tfe_workspace` output ([#5](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/5)) ([#6](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/6))
-
-## 0.2.2 - 2021-03-24
-
-ENHANCEMENTS
-
-- Add support for passing HCL variables to the tfe workspaces ([#4](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/4))
-
-## 0.2.1 - 2021-03-24
-
-ENHANCEMENTS
-
-- Add account/environment variables to the additional tfe workspaces ([#3](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/3))
-
-## 0.2.0 - 2021-03-23
-
-ENHANCEMENTS
-
-- Upgrade TFE workspace module to 0.3.1 ([#2](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/2))
-
-## 0.1.0 - 2021-02-26
-
-- First version ([#1](https://github.com/schubergphilis/terraform-aws-mcaf-avm/pull/1))
