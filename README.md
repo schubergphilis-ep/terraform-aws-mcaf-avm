@@ -111,7 +111,8 @@ You should use the details from the AWS Control Tower Admin user.
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   name = "my-aws-account"
   tags = { Terraform = true }
@@ -136,7 +137,8 @@ module "aws_account" {
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   name = "my-aws-account"
   tags = { Terraform = true }
@@ -168,7 +170,8 @@ module "aws_account" {
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   create_default_workspace = false
   name                     = "my-aws-account"
@@ -207,7 +210,9 @@ In case you want to reference a permission boundary that needs to be attached to
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
+
   ...
   permissions_boundaries = {
     workspace_boundary      = "${path.module}/workspace_boundary.json"
@@ -229,7 +234,7 @@ module "aws_account" {
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.12.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.9.0 |
-| <a name="requirement_mcaf"></a> [mcaf](#requirement\_mcaf) | >= 0.4.2 |
+| <a name="requirement_mcaf"></a> [mcaf](#requirement\_mcaf) | >= 0.4.5 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0.0 |
 | <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) | >= 0.70.0 |
 | <a name="requirement_tls"></a> [tls](#requirement\_tls) | >= 4.0.4 |
@@ -246,11 +251,11 @@ module "aws_account" {
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_account"></a> [account](#module\_account) | schubergphilis/mcaf-account/aws | ~> 0.5.1 |
-| <a name="module_additional_tfe_workspaces"></a> [additional\_tfe\_workspaces](#module\_additional\_tfe\_workspaces) | schubergphilis/mcaf-workspace/aws | ~> 4.0.0 |
-| <a name="module_tfe_project_auth"></a> [tfe\_project\_auth](#module\_tfe\_project\_auth) | schubergphilis/mcaf-workspace/aws//modules/auth | ~> 3.1.0 |
-| <a name="module_tfe_project_variable_set"></a> [tfe\_project\_variable\_set](#module\_tfe\_project\_variable\_set) | schubergphilis/mcaf-variable-set/tfe | ~> 0.2.0 |
-| <a name="module_tfe_workspace"></a> [tfe\_workspace](#module\_tfe\_workspace) | schubergphilis/mcaf-workspace/aws | ~> 4.0.0 |
+| <a name="module_account"></a> [account](#module\_account) | schubergphilis-ep/mcaf-account/aws | ~> 1.0.0 |
+| <a name="module_additional_tfe_workspaces"></a> [additional\_tfe\_workspaces](#module\_additional\_tfe\_workspaces) | schubergphilis-ep/mcaf-workspace/aws | ~> 4.0.0 |
+| <a name="module_tfe_project_auth"></a> [tfe\_project\_auth](#module\_tfe\_project\_auth) | schubergphilis-ep/mcaf-workspace/aws//modules/auth | ~> 3.1.0 |
+| <a name="module_tfe_project_variable_set"></a> [tfe\_project\_variable\_set](#module\_tfe\_project\_variable\_set) | schubergphilis-ep/mcaf-variable-set/tfe | ~> 0.2.0 |
+| <a name="module_tfe_workspace"></a> [tfe\_workspace](#module\_tfe\_workspace) | schubergphilis-ep/mcaf-workspace/aws | ~> 4.0.0 |
 
 ## Resources
 
