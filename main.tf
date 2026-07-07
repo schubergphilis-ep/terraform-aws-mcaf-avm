@@ -46,7 +46,7 @@ provider "aws" {
 }
 
 module "account" {
-  source  = "schubergphilis/mcaf-account/aws"
+  source  = "schubergphilis-ep/mcaf-account/aws"
   version = "~> 0.5.1"
 
   account                  = var.name
@@ -187,7 +187,7 @@ resource "tfe_project_settings" "default" {
 module "tfe_project_variable_set" {
   count = var.tfe_project.enabled && (var.tfe_project.variable_set != null || try(var.tfe_project.auth.enabled, false)) ? 1 : 0
 
-  source  = "schubergphilis/mcaf-variable-set/tfe"
+  source  = "schubergphilis-ep/mcaf-variable-set/tfe"
   version = "~> 0.2.0"
 
   name              = "project-${local.tfe_project_name}"
@@ -271,7 +271,7 @@ module "tfe_workspace" {
 
   providers = { aws = aws.account }
 
-  source  = "schubergphilis/mcaf-workspace/aws"
+  source  = "schubergphilis-ep/mcaf-workspace/aws"
   version = "~> 4.0.0"
 
   agent_pool_id                                = var.tfe_workspace.agent_pool_id
@@ -328,7 +328,7 @@ module "additional_tfe_workspaces" {
 
   providers = { aws = aws.account }
 
-  source  = "schubergphilis/mcaf-workspace/aws"
+  source  = "schubergphilis-ep/mcaf-workspace/aws"
   version = "~> 4.0.0"
 
   agent_pool_id                                = each.value.agent_pool_id != null ? each.value.agent_pool_id : var.tfe_workspace.agent_pool_id
