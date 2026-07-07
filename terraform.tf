@@ -5,8 +5,8 @@ terraform {
       version = ">= 4.9.0"
     }
     mcaf = {
-      source  = "schubergphilis/mcaf"
-      version = ">= 0.4.2"
+      source  = "schubergphilis-ep/mcaf"
+      version = ">= 0.4.5"
     }
     random = {
       source  = "hashicorp/random"

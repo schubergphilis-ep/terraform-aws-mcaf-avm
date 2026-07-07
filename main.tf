@@ -47,7 +47,7 @@ provider "aws" {
 
 module "account" {
   source  = "schubergphilis-ep/mcaf-account/aws"
-  version = "~> 0.5.1"
+  version = "~> 1.0.0"
 
   account                  = var.name
   email                    = var.account.email
@@ -241,7 +241,7 @@ module "tfe_project_auth" {
 
   providers = { aws = aws.account }
 
-  source  = "schubergphilis/mcaf-workspace/aws//modules/auth"
+  source  = "schubergphilis-ep/mcaf-workspace/aws//modules/auth"
   version = "~> 3.1.0"
 
   agent_role_arns          = var.tfe_project.auth.agent_role_arns

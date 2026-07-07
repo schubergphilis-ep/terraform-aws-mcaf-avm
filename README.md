@@ -111,7 +111,8 @@ You should use the details from the AWS Control Tower Admin user.
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   name = "my-aws-account"
   tags = { Terraform = true }
@@ -136,7 +137,8 @@ module "aws_account" {
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   name = "my-aws-account"
   tags = { Terraform = true }
@@ -168,7 +170,8 @@ module "aws_account" {
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
 
   create_default_workspace = false
   name                     = "my-aws-account"
@@ -207,7 +210,9 @@ In case you want to reference a permission boundary that needs to be attached to
 
 ```hcl
 module "aws_account" {
-  source = "github.com/schubergphilis/terraform-aws-mcaf-avm?ref=VERSION"
+  source  = "schubergphilis-ep/mcaf-avm/aws"
+  version = "x.x.x"
+
   ...
   permissions_boundaries = {
     workspace_boundary      = "${path.module}/workspace_boundary.json"
