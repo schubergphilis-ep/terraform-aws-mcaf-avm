@@ -1,4 +1,7 @@
 locals {
+
+  # --- TFE Variables & Variable Sets ---
+
   account_variable_set_name = var.account_variable_set.name != null ? var.account_variable_set.name : "account-${var.name}"
 
   # Common variables to be added to either project or account variable set
@@ -15,6 +18,15 @@ locals {
     // Set the `DEFAULT_REGION` variable using the variable set. This way it is also applied to additional
     // workspaces unless that workspace sets the `region` field.
     AWS_DEFAULT_REGION = var.tfe_workspace.default_region
+  }
+
+  # --- TFE Settings ---
+
+  // Resolve whether authentication is enabled for each additional workspace, falling back to the
+  // default workspace setting when the workspace does not set it explicitly. 
+  additional_workspace_auth = {
+    for name, ws in var.additional_tfe_workspaces :
+    name => coalesce(ws.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication)
   }
 
   tfe_project_name = coalesce(var.tfe_project.name, var.name)
@@ -330,7 +342,7 @@ module "additional_tfe_workspaces" {
   clear_text_hcl_variables                     = each.value.clear_text_hcl_variables
   clear_text_terraform_variables               = each.value.clear_text_terraform_variables
   description                                  = each.value.description
-  enable_authentication                        = coalesce(each.value.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication)
+  enable_authentication                        = local.additional_workspace_auth[each.key]
   execution_mode                               = coalesce(each.value.execution_mode, var.tfe_workspace.execution_mode)
   file_triggers_enabled                        = each.value.connect_vcs_repo != false ? each.value.file_triggers_enabled : false
   force_delete                                 = each.value.force_delete
@@ -339,7 +351,7 @@ module "additional_tfe_workspaces" {
   name                                         = coalesce(each.value.name, each.key)
   notification_configuration                   = each.value.notification_configuration != null ? each.value.notification_configuration : var.tfe_workspace.notification_configuration
   oauth_token_id                               = each.value.connect_vcs_repo != false ? try(coalesce(each.value.vcs_oauth_token_id, var.tfe_workspace.vcs_oauth_token_id), null) : null
-  oidc_settings                                = coalesce(each.value.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication) ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
+  oidc_settings                                = local.additional_workspace_auth[each.key] ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
   path                                         = var.path
   permissions_boundary_arn                     = each.value.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
   policy                                       = each.value.policy
