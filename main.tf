@@ -22,13 +22,6 @@ locals {
   tfe_workspace = {
     working_directory = var.account.environment != null ? "terraform/${var.account.environment}" : "terraform"
   }
-
-  // Create the TFC OIDC provider when authentication is enabled for any workspace or the project.
-  tfe_workspace_enable_oidc = anytrue(concat(
-    [var.create_default_workspace && var.tfe_workspace.enable_workspace_authentication],
-    [var.tfe_project.enabled && var.tfe_project.auth.enabled],
-    [for ws in values(var.additional_tfe_workspaces) : coalesce(ws.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication)],
-  ))
 }
 
 ################################################################################
@@ -100,18 +93,15 @@ resource "aws_account_alternate_contact" "security" {
 }
 
 data "tls_certificate" "oidc_certificate" {
-  count = local.tfe_workspace_enable_oidc ? 1 : 0
-
   url = "https://app.terraform.io"
 }
 
 resource "aws_iam_openid_connect_provider" "tfc_provider" {
-  count    = local.tfe_workspace_enable_oidc ? 1 : 0
   provider = aws.account
 
-  url             = data.tls_certificate.oidc_certificate[0].url
+  url             = data.tls_certificate.oidc_certificate.url
   client_id_list  = ["aws.workload.identity"]
-  thumbprint_list = [data.tls_certificate.oidc_certificate[0].certificates[0].sha1_fingerprint]
+  thumbprint_list = [data.tls_certificate.oidc_certificate.certificates[0].sha1_fingerprint]
 }
 
 resource "aws_iam_policy" "workspace_boundary" {
@@ -258,7 +248,7 @@ module "tfe_project_auth" {
   oidc_settings = {
     oidc_project_filter   = tfe_project.default[0].name
     oidc_workspace_filter = "*"
-    provider_arn          = aws_iam_openid_connect_provider.tfc_provider[0].arn
+    provider_arn          = aws_iam_openid_connect_provider.tfc_provider.arn
   }
 }
 
@@ -295,7 +285,7 @@ module "tfe_workspace" {
   name                                         = coalesce(var.tfe_workspace.name, var.name)
   notification_configuration                   = var.tfe_workspace.notification_configuration
   oauth_token_id                               = var.tfe_workspace.connect_vcs_repo != false ? var.tfe_workspace.vcs_oauth_token_id : null
-  oidc_settings                                = var.tfe_workspace.enable_workspace_authentication ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider[0].arn } : null
+  oidc_settings                                = var.tfe_workspace.enable_workspace_authentication ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
   path                                         = var.path
   permissions_boundary_arn                     = var.tfe_workspace.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
   policy                                       = var.tfe_workspace.policy
@@ -349,7 +339,7 @@ module "additional_tfe_workspaces" {
   name                                         = coalesce(each.value.name, each.key)
   notification_configuration                   = each.value.notification_configuration != null ? each.value.notification_configuration : var.tfe_workspace.notification_configuration
   oauth_token_id                               = each.value.connect_vcs_repo != false ? try(coalesce(each.value.vcs_oauth_token_id, var.tfe_workspace.vcs_oauth_token_id), null) : null
-  oidc_settings                                = coalesce(each.value.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication) ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider[0].arn } : null
+  oidc_settings                                = coalesce(each.value.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication) ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
   path                                         = var.path
   permissions_boundary_arn                     = each.value.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
   policy                                       = each.value.policy
