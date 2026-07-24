@@ -2,6 +2,26 @@
 
 This document captures required refactoring on your part when upgrading to a module version that contains breaking changes.
 
+## Upgrading to v10.0.0
+
+### Key Changes v10.0.0
+
+The `schubergphilis-ep/mcaf-workspace/aws` child modules (the workspace module and its `modules/auth` submodule) are upgraded from `v4` to `v5`, which is **OIDC-only**. IAM-role (external-id / agent) and IAM-user workspace authentication are no longer supported.
+
+### Variables (v10.0.0)
+
+The following variables are removed, as OIDC is now the only authentication method:
+
+- `tfe_workspace.auth_method`, `tfe_workspace.username`, `tfe_workspace.agent_role_arns`
+- `additional_tfe_workspaces.auth_method`, `additional_tfe_workspaces.username`, `additional_tfe_workspaces.agent_role_arns`
+- `tfe_project.auth.method`, `tfe_project.auth.username`, `tfe_project.auth.agent_role_arns`
+
+### How to upgrade v10.0.0
+
+1. Remove the variables listed above from your module inputs.
+2. Ensure any workspace or project that needs AWS access uses OIDC authentication (`enable_workspace_authentication = true`, which is the default).
+3. Run `terraform init -upgrade`, then `terraform plan`. Workspaces that previously used IAM-user or IAM-role (external-id / agent) authentication will have their auth resources replaced with an OIDC role trust.
+
 ## Upgrading to v9.0.0
 
 ### Key Changes v9.0.0
