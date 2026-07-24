@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [10.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v9.0.0...v10.0.0) (2026-07-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* only support OIDC authentication ([#4](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/issues/4))
+
+### 🚀 Features
+
+* only support OIDC authentication ([#4](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/issues/4)) ([f57f432](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/f57f4326def91e79c023a63badc42281f44911cc))
+
 ## [9.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v8.2.0...v9.0.0) (2026-07-07)
 
 
