@@ -41,40 +41,49 @@ variable "account_variable_set" {
   description = "Settings of variable set that is attached to each workspace"
 }
 
+variable "authentication_settings" {
+  type = object({
+    role_add_permissions_boundary    = optional(bool)   # automatically set to true if permissions_boundaries is set
+    role_name_prefix                 = optional(string) # automatically set by the module if not provided
+    set_terraform_role_arn_variables = optional(bool, true)
+
+    roles = optional(object({
+      run = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      plan = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      apply = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      }), {
+      run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+      plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
+      apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+    })
+  })
+  default     = {}
+  description = "TFE AWS authentication settings"
+
+  validation {
+    condition     = !coalesce(var.authentication_settings.role_add_permissions_boundary, false) || var.permissions_boundaries != null
+    error_message = "authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
+  }
+}
+
 variable "tfe_project" {
   type = object({
     enabled = optional(bool, false)
     name    = optional(string)
 
-    default_execution_mode = optional(string)
-    default_agent_pool_id  = optional(string)
-    variable_set_ids       = optional(map(string), {})
-
-    auth = optional(object({
-      enabled                          = optional(bool, false)
-      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
-      role_name                        = optional(string)
-      set_terraform_role_arn_variables = optional(bool, true)
-
-      roles = optional(object({
-        run = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-        plan = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-        apply = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-        }), {
-        run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-        plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
-        apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-      })
-    }), {})
+    default_agent_pool_id                = optional(string)
+    default_execution_mode               = optional(string)
+    enable_project_scoped_authentication = optional(bool, false)
+    variable_set_ids                     = optional(map(string), {})
 
     variable_set = optional(object({
       clear_text_env_variables       = optional(map(string), {})
@@ -100,6 +109,14 @@ variable "tfe_project" {
     )
     error_message = "Default agent pool ID can only be set if default execution mode is 'agent'"
   }
+
+  validation {
+    condition = (
+      var.tfe_project.enable_project_scope_authentication ||
+      var.tfe_workspace.enable_workspace_scoped_authentication
+    )
+    error_message = "Either tfe_project.enable_project_scope_authentication and/or tfe_workspace.enable_workspace_scoped_authentication must be true."
+  }
 }
 
 variable "additional_tfe_workspaces" {
@@ -118,6 +135,7 @@ variable "additional_tfe_workspaces" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = optional(string)
     description                                  = optional(string)
+    enable_workspace_scoped_authentication       = optional(bool)
     execution_mode                               = optional(string)
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
@@ -142,10 +160,9 @@ variable "additional_tfe_workspaces" {
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
 
-    auth = optional(object({
-      enabled                          = optional(bool)
-      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
-      role_name                        = optional(string)
+    override_authentication_settings = optional(object({
+      role_add_permissions_boundary    = optional(bool)
+      role_name_prefix                 = optional(string)
       set_terraform_role_arn_variables = optional(bool)
 
       roles = optional(object({
@@ -192,6 +209,14 @@ variable "additional_tfe_workspaces" {
   }))
   default     = {}
   description = "Additional TFE workspaces"
+
+  validation {
+    condition = alltrue([
+      for name, workspace in var.additional_tfe_workspaces :
+      !coalesce(workspace.override_authentication_settings.role_add_permissions_boundary, false)
+    ]) || var.permissions_boundaries != null
+    error_message = "override_authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
+  }
 }
 
 variable "create_default_workspace" {
@@ -229,7 +254,7 @@ variable "permissions_boundaries" {
   validation {
     condition = (
       var.permissions_boundaries == null ||
-      !contains(values(var.permissions_boundaries), null)
+      alltrue([for value in values(var.permissions_boundaries) : value != null])
     )
     error_message = "If permissions_boundaries is set, all boundary and boundary_name attributes must be set as well."
   }
@@ -251,6 +276,7 @@ variable "tfe_workspace" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = string
     description                                  = optional(string)
+    enable_workspace_scoped_authentication       = optional(bool, true)
     execution_mode                               = optional(string, "remote")
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
@@ -276,11 +302,10 @@ variable "tfe_workspace" {
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
 
-    auth = optional(object({
-      enabled                          = optional(bool, true)
-      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
-      role_name                        = optional(string)
-      set_terraform_role_arn_variables = optional(bool, true)
+    override_authentication_settings = optional(object({
+      role_add_permissions_boundary    = optional(bool)
+      role_name_prefix                 = optional(string)
+      set_terraform_role_arn_variables = optional(bool)
 
       roles = optional(object({
         run = optional(object({
@@ -295,11 +320,7 @@ variable "tfe_workspace" {
           policy      = optional(string)
           policy_arns = optional(set(string), [])
         }))
-        }), {
-        run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-        plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
-        apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-      })
+      }))
     }), {})
 
     notification_configuration = optional(map(object({
@@ -329,4 +350,9 @@ variable "tfe_workspace" {
     })), {})
   })
   description = "TFE workspace settings"
+
+  validation {
+    condition     = !coalesce(var.tfe_workspace.override_authentication_settings.role_add_permissions_boundary, false) || var.permissions_boundaries != null
+    error_message = "tfe_workspace.override_authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
+  }
 }
