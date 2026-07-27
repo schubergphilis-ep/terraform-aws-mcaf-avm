@@ -48,21 +48,38 @@ variable "tfe_project" {
 
     default_execution_mode = optional(string)
     default_agent_pool_id  = optional(string)
+    variable_set_ids       = optional(map(string), {})
+
+    auth = optional(object({
+      enabled                          = optional(bool, false)
+      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
+      role_name                        = optional(string)
+      set_terraform_role_arn_variables = optional(bool, true)
+
+      roles = optional(object({
+        run = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        plan = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        apply = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        }), {
+        run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+        plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
+        apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+      })
+    }), {})
 
     variable_set = optional(object({
       clear_text_env_variables       = optional(map(string), {})
       clear_text_hcl_variables       = optional(map(string), {})
       clear_text_terraform_variables = optional(map(string), {})
-    }), {})
-
-    variable_set_ids = optional(map(string), {})
-
-    auth = optional(object({
-      enabled                  = optional(bool, false)
-      add_permissions_boundary = optional(bool, false)
-      policy                   = optional(string)
-      policy_arns              = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
-      role_name                = optional(string, "TFEPipeline")
     }), {})
   })
   default     = {}
@@ -87,7 +104,6 @@ variable "tfe_project" {
 
 variable "additional_tfe_workspaces" {
   type = map(object({
-    add_permissions_boundary                     = optional(bool, false)
     agent_pool_id                                = optional(string)
     allow_destroy_plan                           = optional(bool)
     assessments_enabled                          = optional(bool)
@@ -102,19 +118,15 @@ variable "additional_tfe_workspaces" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = optional(string)
     description                                  = optional(string)
-    enable_workspace_authentication              = optional(bool)
     execution_mode                               = optional(string)
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
     global_remote_state                          = optional(bool, false)
     name                                         = optional(string)
-    policy                                       = optional(string)
-    policy_arns                                  = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
     project_id                                   = optional(string)
     queue_all_runs                               = optional(bool)
     remote_state_consumer_ids                    = optional(set(string))
     repository_identifier                        = optional(string)
-    role_name                                    = optional(string)
     sensitive_env_variables                      = optional(map(string), {})
     sensitive_hcl_variables                      = optional(map(object({ sensitive = string })), {})
     sensitive_terraform_variables                = optional(map(string), {})
@@ -129,6 +141,28 @@ variable "additional_tfe_workspaces" {
     vcs_oauth_token_id                           = optional(string)
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
+
+    auth = optional(object({
+      enabled                          = optional(bool)
+      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
+      role_name                        = optional(string)
+      set_terraform_role_arn_variables = optional(bool)
+
+      roles = optional(object({
+        run = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        plan = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        apply = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+      }))
+    }), {})
 
     notification_configuration = optional(map(object({
       destination_type = string
@@ -190,12 +224,19 @@ variable "permissions_boundaries" {
     workload_boundary       = optional(string)
     workload_boundary_name  = optional(string)
   })
-  default = {}
+  default = null
+
+  validation {
+    condition = (
+      var.permissions_boundaries == null ||
+      !contains(values(var.permissions_boundaries), null)
+    )
+    error_message = "If permissions_boundaries is set, all boundary and boundary_name attributes must be set as well."
+  }
 }
 
 variable "tfe_workspace" {
   type = object({
-    add_permissions_boundary                     = optional(bool, false)
     agent_pool_id                                = optional(string)
     allow_destroy_plan                           = optional(bool, true)
     assessments_enabled                          = optional(bool, true)
@@ -210,20 +251,16 @@ variable "tfe_workspace" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = string
     description                                  = optional(string)
-    enable_workspace_authentication              = optional(bool, true)
     execution_mode                               = optional(string, "remote")
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
     global_remote_state                          = optional(bool, false)
     name                                         = optional(string)
     organization                                 = optional(string)
-    policy                                       = optional(string)
-    policy_arns                                  = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
     project_id                                   = optional(string)
     queue_all_runs                               = optional(bool)
     remote_state_consumer_ids                    = optional(set(string))
     repository_identifier                        = optional(string)
-    role_name                                    = optional(string, "TFEPipeline")
     sensitive_env_variables                      = optional(map(string), {})
     sensitive_hcl_variables                      = optional(map(object({ sensitive = string })), {})
     sensitive_terraform_variables                = optional(map(string), {})
@@ -238,6 +275,32 @@ variable "tfe_workspace" {
     vcs_oauth_token_id                           = optional(string)
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
+
+    auth = optional(object({
+      enabled                          = optional(bool, true)
+      role_add_permissions_boundary    = optional(bool) # automatically set to true if permissions_boundaries is set
+      role_name                        = optional(string)
+      set_terraform_role_arn_variables = optional(bool, true)
+
+      roles = optional(object({
+        run = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        plan = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        apply = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        }), {
+        run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+        plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
+        apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+      })
+    }), {})
 
     notification_configuration = optional(map(object({
       destination_type = string
