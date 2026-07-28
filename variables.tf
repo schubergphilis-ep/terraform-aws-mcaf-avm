@@ -43,9 +43,15 @@ variable "account_variable_set" {
 
 variable "authentication_settings" {
   type = object({
-    role_add_permissions_boundary    = optional(bool)   # automatically set to true if permissions_boundaries is set
     role_name_prefix                 = optional(string) # automatically set by the module if not provided
     set_terraform_role_arn_variables = optional(bool, true)
+
+    permissions_boundaries = optional(object({
+      workspace_boundary      = string
+      workspace_boundary_name = optional(string, "pipeline_boundary")
+      workload_boundary       = string
+      workload_boundary_name  = optional(string, "workload_boundary")
+    }))
 
     roles = optional(object({
       run = optional(object({
@@ -68,11 +74,6 @@ variable "authentication_settings" {
   })
   default     = {}
   description = "TFE AWS authentication settings"
-
-  validation {
-    condition     = !coalesce(var.authentication_settings.role_add_permissions_boundary, false) || var.permissions_boundaries != null
-    error_message = "authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
-  }
 }
 
 variable "tfe_project" {
@@ -112,10 +113,10 @@ variable "tfe_project" {
 
   validation {
     condition = (
-      var.tfe_project.enable_project_scope_authentication ||
+      var.tfe_project.enable_project_scoped_authentication ||
       var.tfe_workspace.enable_workspace_scoped_authentication
     )
-    error_message = "Either tfe_project.enable_project_scope_authentication and/or tfe_workspace.enable_workspace_scoped_authentication must be true."
+    error_message = "Either tfe_project.enable_project_scoped_authentication and/or tfe_workspace.enable_workspace_scoped_authentication must be true."
   }
 }
 
@@ -161,7 +162,7 @@ variable "additional_tfe_workspaces" {
     workspace_tags                               = optional(map(string))
 
     override_authentication_settings = optional(object({
-      role_add_permissions_boundary    = optional(bool)
+      role_add_permissions_boundary    = optional(bool) # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
       role_name_prefix                 = optional(string)
       set_terraform_role_arn_variables = optional(bool)
 
@@ -214,8 +215,8 @@ variable "additional_tfe_workspaces" {
     condition = alltrue([
       for name, workspace in var.additional_tfe_workspaces :
       !coalesce(workspace.override_authentication_settings.role_add_permissions_boundary, false)
-    ]) || var.permissions_boundaries != null
-    error_message = "override_authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
+    ]) || var.authentication_settings.permissions_boundaries != null
+    error_message = "override_authentication_settings.role_add_permissions_boundary can only be enabled when authentication_settings.permissions_boundaries is set."
   }
 }
 
@@ -240,24 +241,6 @@ variable "tags" {
   type        = map(string)
   default     = {}
   description = "A map of tags to assign to all resources"
-}
-
-variable "permissions_boundaries" {
-  type = object({
-    workspace_boundary      = optional(string)
-    workspace_boundary_name = optional(string)
-    workload_boundary       = optional(string)
-    workload_boundary_name  = optional(string)
-  })
-  default = null
-
-  validation {
-    condition = (
-      var.permissions_boundaries == null ||
-      alltrue([for value in values(var.permissions_boundaries) : value != null])
-    )
-    error_message = "If permissions_boundaries is set, all boundary and boundary_name attributes must be set as well."
-  }
 }
 
 variable "tfe_workspace" {

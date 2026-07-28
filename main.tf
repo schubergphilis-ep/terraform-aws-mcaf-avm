@@ -1,4 +1,9 @@
 locals {
+  # --- Authentication Settings ---
+
+  // The workspace boundary is attached to every pipeline role created by this module whenever permissions boundaries are configured.
+  // Can be overridden for individual additional workspaces by setting `role_add_permissions_boundary` to false.
+  permissions_boundary_arn = var.authentication_settings.permissions_boundaries != null ? aws_iam_policy.workspace_boundary[0].arn : null
 
   # --- TFE Variables & Variable Sets ---
 
@@ -11,7 +16,7 @@ locals {
     // if environment, add environment = var.account.environment
     var.account.environment != null ? { environment = var.account.environment } : {},
     // if workload_boundary_arn, add workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn
-    var.permissions_boundaries != null ? { workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn } : {}
+    var.authentication_settings.permissions_boundaries != null ? { workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn } : {}
   )
 
   common_env_variables = {
@@ -23,10 +28,6 @@ locals {
   # --- TFE Settings ---
 
   tfe_project_name = coalesce(var.tfe_project.name, var.name)
-
-  // Account-wide default for attaching the workspace permissions boundary to the pipeline roles,
-  // enabled by default whenever boundaries are configured. Workspaces can override it.
-  tfe_role_add_permissions_boundary = coalesce(var.authentication_settings.role_add_permissions_boundary, var.permissions_boundaries != null)
 
   tfe_workspace = {
     working_directory = var.account.environment != null ? "terraform/${var.account.environment}" : "terraform"
@@ -118,23 +119,23 @@ resource "aws_iam_openid_connect_provider" "tfc_provider" {
 }
 
 resource "aws_iam_policy" "workspace_boundary" {
-  count = var.permissions_boundaries != null ? 1 : 0
+  count = var.authentication_settings.permissions_boundaries != null ? 1 : 0
 
   provider = aws.account
 
-  name   = var.permissions_boundaries.workspace_boundary_name
+  name   = var.authentication_settings.permissions_boundaries.workspace_boundary_name
   path   = var.path
-  policy = templatefile(var.permissions_boundaries.workspace_boundary, { account_id = module.account.id })
+  policy = templatefile(var.authentication_settings.permissions_boundaries.workspace_boundary, { account_id = module.account.id })
 }
 
 resource "aws_iam_policy" "workload_boundary" {
-  count = var.permissions_boundaries != null ? 1 : 0
+  count = var.authentication_settings.permissions_boundaries != null ? 1 : 0
 
   provider = aws.account
 
-  name   = var.permissions_boundaries.workload_boundary_name
+  name   = var.authentication_settings.permissions_boundaries.workload_boundary_name
   path   = var.path
-  policy = templatefile(var.permissions_boundaries.workload_boundary, { account_id = module.account.id })
+  policy = templatefile(var.authentication_settings.permissions_boundaries.workload_boundary, { account_id = module.account.id })
 }
 
 ################################################################################
@@ -266,7 +267,7 @@ module "tfe_project_auth" {
   role_settings = {
     name                     = var.authentication_settings.role_name_prefix
     path                     = var.path
-    permissions_boundary_arn = local.tfe_role_add_permissions_boundary ? aws_iam_policy.workspace_boundary[0].arn : null
+    permissions_boundary_arn = local.permissions_boundary_arn
 
     apply = var.authentication_settings.roles.apply
     plan  = var.authentication_settings.roles.plan
@@ -329,7 +330,7 @@ module "tfe_workspace" {
     role_settings = {
       name                             = var.authentication_settings.role_name_prefix
       path                             = var.path
-      permissions_boundary_arn         = local.tfe_role_add_permissions_boundary ? aws_iam_policy.workspace_boundary[0].arn : null
+      permissions_boundary_arn         = local.permissions_boundary_arn
       set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
 
       apply = var.authentication_settings.roles.apply
@@ -392,7 +393,7 @@ module "additional_tfe_workspaces" {
     role_settings = {
       name                             = try(coalesce(each.value.override_authentication_settings.role_name_prefix, var.authentication_settings.role_name_prefix), null)
       path                             = var.path
-      permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.role_add_permissions_boundary, local.tfe_role_add_permissions_boundary) ? aws_iam_policy.workspace_boundary[0].arn : null
+      permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.role_add_permissions_boundary, true) ? local.permissions_boundary_arn : null
       set_terraform_role_arn_variables = coalesce(each.value.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)
 
       apply = try(coalesce(each.value.override_authentication_settings.roles.apply, var.authentication_settings.roles.apply), null)

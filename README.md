@@ -167,9 +167,9 @@ module "aws_account" {
 
 ## IAM Permissions Boundaries
 
-The module supports setting a Permission Boundary on the workspace IAM role by passing down `permissions_boundaries.workspace_boundary`, which needs to be referencing the path where the permissions boundary is stored in git and the name: `permissions_boundaries.workspace_boundary_name`. By setting `var.tfe_workspace.add_permissions_boundary` or `var.additional_tfe_workspaces.add_permissions_boundary` to `true`, the permissions boundary will be attached to that specific workspace role.
+The module supports setting a Permission Boundary on the pipeline IAM roles by passing down `authentication_settings.permissions_boundaries.workspace_boundary`, which needs to be referencing the path where the permissions boundary is stored in git and the name: `authentication_settings.permissions_boundaries.workspace_boundary_name`. Whenever `permissions_boundaries` is set, the workspace boundary is attached to every pipeline role created by this module: the project role and the role of every workspace. An additional workspace can opt out by setting `override_authentication_settings.role_add_permissions_boundary = false`.
 
-In case you want to reference a permission boundary that needs to be attached to every IAM role that will be created by the workspace role then you can create this permission boundary by specifying `permissions_boundaries.workload_boundary` which needs to be referencing the path where the permissions boundary is stored in git and the name: `permissions_boundaries.workload_boundary_name`.
+In case you want to reference a permission boundary that needs to be attached to every IAM role that will be created by the workspace role then you can create this permission boundary by specifying `authentication_settings.permissions_boundaries.workload_boundary` which needs to be referencing the path where the permissions boundary is stored in git and the name: `authentication_settings.permissions_boundaries.workload_boundary_name`. Its ARN is exposed to the workspaces as the `workload_permissions_boundary_arn` Terraform variable.
 
 ```hcl
 module "aws_account" {
@@ -177,11 +177,13 @@ module "aws_account" {
   version = "x.x.x"
 
   ...
-  permissions_boundaries = {
-    workspace_boundary      = "${path.module}/workspace_boundary.json"
-    workspace_boundary_name = "workspace_boundary"
-    workload_boundary       = "${path.module}/workload_boundary.json"
-    workload_boundary_name  = "workload_boundary"
+  authentication_settings = {
+    permissions_boundaries = {
+      workspace_boundary      = "${path.module}/workspace_boundary.json"
+      workspace_boundary_name = "workspace_boundary"
+      workload_boundary       = "${path.module}/workload_boundary.json"
+      workload_boundary_name  = "workload_boundary"
+    }
   }
   ...
 }
