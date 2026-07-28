@@ -326,16 +326,15 @@ module "tfe_workspace" {
   authentication = var.tfe_workspace.enable_workspace_scoped_authentication ? {
     oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
 
-    // Every setting falls back to `authentication_settings` when the workspace does not override it
     role_settings = {
-      name                             = try(coalesce(var.tfe_workspace.override_authentication_settings.role_name_prefix, var.authentication_settings.role_name_prefix), null)
+      name                             = var.authentication_settings.role_name_prefix
       path                             = var.path
-      permissions_boundary_arn         = coalesce(var.tfe_workspace.override_authentication_settings.role_add_permissions_boundary, local.tfe_role_add_permissions_boundary) ? aws_iam_policy.workspace_boundary[0].arn : null
-      set_terraform_role_arn_variables = coalesce(var.tfe_workspace.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)
+      permissions_boundary_arn         = local.tfe_role_add_permissions_boundary ? aws_iam_policy.workspace_boundary[0].arn : null
+      set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
 
-      apply = try(coalesce(var.tfe_workspace.override_authentication_settings.roles.apply, var.authentication_settings.roles.apply), null)
-      plan  = try(coalesce(var.tfe_workspace.override_authentication_settings.roles.plan, var.authentication_settings.roles.plan), null)
-      run   = try(coalesce(var.tfe_workspace.override_authentication_settings.roles.run, var.authentication_settings.roles.run), null)
+      apply = var.authentication_settings.roles.apply
+      plan  = var.authentication_settings.roles.plan
+      run   = var.authentication_settings.roles.run
     }
   } : null
 }

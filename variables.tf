@@ -302,27 +302,6 @@ variable "tfe_workspace" {
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
 
-    override_authentication_settings = optional(object({
-      role_add_permissions_boundary    = optional(bool)
-      role_name_prefix                 = optional(string)
-      set_terraform_role_arn_variables = optional(bool)
-
-      roles = optional(object({
-        run = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-        plan = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-        apply = optional(object({
-          policy      = optional(string)
-          policy_arns = optional(set(string), [])
-        }))
-      }))
-    }), {})
-
     notification_configuration = optional(map(object({
       destination_type = string
       enabled          = optional(bool, true)
@@ -350,9 +329,4 @@ variable "tfe_workspace" {
     })), {})
   })
   description = "TFE workspace settings"
-
-  validation {
-    condition     = !coalesce(var.tfe_workspace.override_authentication_settings.role_add_permissions_boundary, false) || var.permissions_boundaries != null
-    error_message = "tfe_workspace.override_authentication_settings.role_add_permissions_boundary can only be enabled when permissions_boundaries is set."
-  }
 }
