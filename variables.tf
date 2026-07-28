@@ -43,7 +43,8 @@ variable "account_variable_set" {
 
 variable "authentication_settings" {
   type = object({
-    role_name_prefix                 = optional(string) # automatically set by the module if not provided
+    role_name_prefix                 = optional(string)                     # automatically set by the module if not provided
+    scope                            = optional(set(string), ["workspace"]) # "project", "workspace", or both
     set_terraform_role_arn_variables = optional(bool, true)
 
     permissions_boundaries = optional(object({
@@ -73,18 +74,27 @@ variable "authentication_settings" {
     })
   })
   default     = {}
-  description = "TFE AWS authentication settings"
+  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace, and both can be combined."
+
+  validation {
+    condition     = length(setsubtract(var.authentication_settings.scope, ["project", "workspace"])) == 0
+    error_message = "Authentication scope may only contain \"project\" and/or \"workspace\"."
+  }
+
+  validation {
+    condition     = length(var.authentication_settings.scope) > 0
+    error_message = "Authentication scope must contain at least one of \"project\" or \"workspace\"."
+  }
 }
 
 variable "tfe_project" {
   type = object({
-    enabled = optional(bool, false)
+    enabled = optional(bool) # defaults to true when authentication_settings.scope contains "project".
     name    = optional(string)
 
-    default_agent_pool_id                = optional(string)
-    default_execution_mode               = optional(string)
-    enable_project_scoped_authentication = optional(bool, false)
-    variable_set_ids                     = optional(map(string), {})
+    default_agent_pool_id  = optional(string)
+    default_execution_mode = optional(string)
+    variable_set_ids       = optional(map(string), {})
 
     variable_set = optional(object({
       clear_text_env_variables       = optional(map(string), {})
@@ -93,7 +103,12 @@ variable "tfe_project" {
     }), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enabled` defaults to true when authentication_settings.scope contains \"project\", since project-scoped authentication requires a project, and false otherwise."
+
+  validation {
+    condition     = var.tfe_project.enabled != false || !contains(var.authentication_settings.scope, "project")
+    error_message = "tfe_project.enabled cannot be set to false when authentication_settings.scope contains \"project\"."
+  }
 
   validation {
     condition = (
@@ -109,14 +124,6 @@ variable "tfe_project" {
       var.tfe_project.default_execution_mode == "agent"
     )
     error_message = "Default agent pool ID can only be set if default execution mode is 'agent'"
-  }
-
-  validation {
-    condition = (
-      var.tfe_project.enable_project_scoped_authentication ||
-      var.tfe_workspace.enable_workspace_scoped_authentication
-    )
-    error_message = "Either tfe_project.enable_project_scoped_authentication and/or tfe_workspace.enable_workspace_scoped_authentication must be true."
   }
 }
 
@@ -136,7 +143,6 @@ variable "additional_tfe_workspaces" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = optional(string)
     description                                  = optional(string)
-    enable_workspace_scoped_authentication       = optional(bool)
     execution_mode                               = optional(string)
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
@@ -162,7 +168,9 @@ variable "additional_tfe_workspaces" {
     workspace_tags                               = optional(map(string))
 
     override_authentication_settings = optional(object({
-      role_add_permissions_boundary    = optional(bool) # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
+      enabled = optional(bool)
+
+      role_add_permissions_boundary    = optional(bool)
       role_name_prefix                 = optional(string)
       set_terraform_role_arn_variables = optional(bool)
 
@@ -179,7 +187,7 @@ variable "additional_tfe_workspaces" {
           policy      = optional(string)
           policy_arns = optional(set(string), [])
         }))
-      }))
+      }), {})
     }), {})
 
     notification_configuration = optional(map(object({
@@ -259,7 +267,6 @@ variable "tfe_workspace" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = string
     description                                  = optional(string)
-    enable_workspace_scoped_authentication       = optional(bool, true)
     execution_mode                               = optional(string, "remote")
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
