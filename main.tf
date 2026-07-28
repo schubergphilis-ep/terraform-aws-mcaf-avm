@@ -1,13 +1,12 @@
 locals {
   # --- Authentication Settings ---
 
-  // Where the pipeline roles are created. Additional workspaces can opt in or out of the
-  // workspace scope individually via `override_authentication_settings.enabled`.
-  enable_project_scoped_authentication   = contains(var.authentication_settings.scope, "project")
-  enable_workspace_scoped_authentication = contains(var.authentication_settings.scope, "workspace")
+  // Project-scoped roles are created when the scope selects them, or when they are explicitly
+  // enabled alongside the workspace scope via `tfe_project.enable_project_scoped_authentication`.
+  enable_project_scoped_authentication = coalesce(var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
 
   // The workspace boundary is attached to every pipeline role created by this module whenever permissions boundaries are configured.
-  // Can be overridden for individual additional workspaces by setting `role_add_permissions_boundary` to false.
+  // Can be overridden for individual additional workspaces by setting `add_permissions_boundary` to false.
   permissions_boundary_arn = var.authentication_settings.permissions_boundaries != null ? aws_iam_policy.workspace_boundary[0].arn : null
 
   # --- TFE Variables & Variable Sets ---
@@ -256,7 +255,7 @@ resource "tfe_project_variable_set" "default" {
 }
 
 module "tfe_project_auth" {
-  count = local.tfe_project_enabled && local.enable_project_scoped_authentication ? 1 : 0
+  count = local.enable_project_scoped_authentication ? 1 : 0
 
   providers = { aws = aws.account }
 
@@ -332,7 +331,7 @@ module "tfe_workspace" {
   working_directory                            = var.tfe_workspace.set_working_directory ? coalesce(var.tfe_workspace.working_directory, local.tfe_workspace.working_directory) : null
   workspace_tags                               = var.tfe_workspace.workspace_tags
 
-  authentication = local.enable_workspace_scoped_authentication ? {
+  authentication = var.authentication_settings.scope == "workspace" ? {
     oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
 
     role_settings = {
@@ -394,14 +393,14 @@ module "additional_tfe_workspaces" {
   working_directory                            = coalesce(each.value.set_working_directory, var.tfe_workspace.set_working_directory) ? coalesce(each.value.working_directory, "terraform/${coalesce(each.value.name, each.key)}") : null
   workspace_tags                               = each.value.workspace_tags
 
-  authentication = coalesce(each.value.override_authentication_settings.enabled, local.enable_workspace_scoped_authentication) ? {
+  authentication = coalesce(each.value.override_authentication_settings.scope, var.authentication_settings.scope) == "workspace" ? {
     oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
 
     // Every setting falls back to `authentication_settings` when the workspace does not override it
     role_settings = {
       name                             = try(coalesce(each.value.override_authentication_settings.role_name_prefix, var.authentication_settings.role_name_prefix), null)
       path                             = var.path
-      permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.role_add_permissions_boundary, true) ? local.permissions_boundary_arn : null
+      permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.add_permissions_boundary, true) ? local.permissions_boundary_arn : null
       set_terraform_role_arn_variables = coalesce(each.value.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)
 
       apply = try(coalesce(each.value.override_authentication_settings.roles.apply, var.authentication_settings.roles.apply), null)

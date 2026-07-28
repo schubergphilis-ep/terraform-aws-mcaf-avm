@@ -43,8 +43,8 @@ variable "account_variable_set" {
 
 variable "authentication_settings" {
   type = object({
-    role_name_prefix                 = optional(string)                     # automatically set by the module if not provided
-    scope                            = optional(set(string), ["workspace"]) # "project", "workspace", or both
+    role_name_prefix                 = optional(string)              # automatically set by the module if not provided
+    scope                            = optional(string, "workspace") # either "project" or "workspace"
     set_terraform_role_arn_variables = optional(bool, true)
 
     permissions_boundaries = optional(object({
@@ -74,27 +74,23 @@ variable "authentication_settings" {
     })
   })
   default     = {}
-  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace, and both can be combined."
+  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace."
 
   validation {
-    condition     = length(setsubtract(var.authentication_settings.scope, ["project", "workspace"])) == 0
-    error_message = "Authentication scope may only contain \"project\" and/or \"workspace\"."
-  }
-
-  validation {
-    condition     = length(var.authentication_settings.scope) > 0
-    error_message = "Authentication scope must contain at least one of \"project\" or \"workspace\"."
+    condition     = contains(["project", "workspace"], var.authentication_settings.scope)
+    error_message = "Authentication scope must be either \"project\" or \"workspace\"."
   }
 }
 
 variable "tfe_project" {
   type = object({
-    enabled = optional(bool) # defaults to true when authentication_settings.scope contains "project".
+    enabled = optional(bool) # defaults to true when project-scoped authentication is enabled
     name    = optional(string)
 
-    default_agent_pool_id  = optional(string)
-    default_execution_mode = optional(string)
-    variable_set_ids       = optional(map(string), {})
+    default_agent_pool_id                = optional(string)
+    default_execution_mode               = optional(string)
+    enable_project_scoped_authentication = optional(bool) # defaults to true when authentication_settings.scope is "project"
+    variable_set_ids                     = optional(map(string), {})
 
     variable_set = optional(object({
       clear_text_env_variables       = optional(map(string), {})
@@ -103,11 +99,16 @@ variable "tfe_project" {
     }), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enabled` defaults to true when authentication_settings.scope contains \"project\", since project-scoped authentication requires a project, and false otherwise."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles, for example for workspaces created outside of this module. `enabled` defaults to true whenever project-scoped authentication is enabled, since it requires a project, and false otherwise."
 
   validation {
-    condition     = var.tfe_project.enabled != false || !contains(var.authentication_settings.scope, "project")
-    error_message = "tfe_project.enabled cannot be set to false when authentication_settings.scope contains \"project\"."
+    condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
+    error_message = "tfe_project.enable_project_scoped_authentication cannot be set to false when authentication_settings.scope is \"project\"."
+  }
+
+  validation {
+    condition     = var.tfe_project.enabled != false || !coalesce(var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
+    error_message = "tfe_project.enabled cannot be set to false when project-scoped authentication is enabled, either through authentication_settings.scope or tfe_project.enable_project_scoped_authentication."
   }
 
   validation {
@@ -168,10 +169,9 @@ variable "additional_tfe_workspaces" {
     workspace_tags                               = optional(map(string))
 
     override_authentication_settings = optional(object({
-      enabled = optional(bool)
-
-      role_add_permissions_boundary    = optional(bool)
+      add_permissions_boundary         = optional(bool) # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
       role_name_prefix                 = optional(string)
+      scope                            = optional(string) # only accepts "workspace", inherits authentication_settings.scope when null
       set_terraform_role_arn_variables = optional(bool)
 
       roles = optional(object({
@@ -217,14 +217,22 @@ variable "additional_tfe_workspaces" {
     })), null)
   }))
   default     = {}
-  description = "Additional TFE workspaces"
+  description = "Additional TFE workspaces. Set `override_authentication_settings.scope` to \"workspace\" to give a workspace its own IAM roles while authentication_settings.scope is \"project\"; leave it null to follow authentication_settings.scope."
 
   validation {
     condition = alltrue([
       for name, workspace in var.additional_tfe_workspaces :
-      !coalesce(workspace.override_authentication_settings.role_add_permissions_boundary, false)
+      contains(["workspace"], coalesce(workspace.override_authentication_settings.scope, "workspace"))
+    ])
+    error_message = "override_authentication_settings.scope can only be set to \"workspace\"."
+  }
+
+  validation {
+    condition = alltrue([
+      for name, workspace in var.additional_tfe_workspaces :
+      !coalesce(workspace.override_authentication_settings.add_permissions_boundary, false)
     ]) || var.authentication_settings.permissions_boundaries != null
-    error_message = "override_authentication_settings.role_add_permissions_boundary can only be enabled when authentication_settings.permissions_boundaries is set."
+    error_message = "override_authentication_settings.add_permissions_boundary can only be enabled when authentication_settings.permissions_boundaries is set."
   }
 }
 
