@@ -273,7 +273,7 @@ module "tfe_project_auth" {
   }
 
   role_settings = {
-    name                     = coalesce(var.authentication_settings.role_name, "TFEPipeline") // Unlike the workspace module, the auth submodule has no fallback for a null name.
+    name                     = coalesce(var.tfe_project.role_name, var.authentication_settings.role_name)
     path                     = var.path
     permissions_boundary_arn = local.permissions_boundary_arn
 
@@ -399,9 +399,11 @@ module "additional_tfe_workspaces" {
   authentication = coalesce(each.value.override_authentication_settings.scope, var.authentication_settings.scope) == "workspace" ? {
     oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
 
-    // Every setting falls back to `authentication_settings` when the workspace does not override it
+    // Every setting falls back to `authentication_settings` when the workspace does not override it,
+    // except the role name: it must be unique per role, so it is never inherited. Left unset, the
+    // workspace module automatically derives it from the workspace name.
     role_settings = {
-      name                             = try(coalesce(each.value.override_authentication_settings.role_name, var.authentication_settings.role_name), null)
+      name                             = each.value.override_authentication_settings.role_name
       path                             = var.path
       permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.add_permissions_boundary, true) ? local.permissions_boundary_arn : null
       set_terraform_role_arn_variables = coalesce(each.value.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)

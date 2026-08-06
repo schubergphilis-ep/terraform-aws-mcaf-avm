@@ -21,12 +21,13 @@ See the [Authentication section of the README](README.md#authentication) for the
 #### Added (v11.0.0)
 
 - `authentication_settings` — the new home for all authentication inputs:
-  - `role_name` — base IAM role name, defaults to a module-generated name.
+  - `role_name` — base IAM role name for the default workspace's roles, defaults to `TFEPipeline` exactly as `tfe_workspace.role_name` did.
   - `scope` — `"workspace"` (default) or `"project"`.
   - `set_terraform_role_arn_variables` — also expose the role ARNs as Terraform-category variables, defaults to `true`.
   - `permissions_boundaries` — `workspace_boundary`, `workspace_boundary_name`, `workload_boundary`, `workload_boundary_name`.
   - `roles` — `run`, `plan` and `apply`, each accepting `policy` and `policy_arns`.
 - `tfe_project.enable_project_scoped_authentication` — create project-scoped roles *in addition to* per-workspace roles, for workspaces not managed by this module.
+- `tfe_project.role_name` — names the project-scoped roles, defaults to `TFEPipeline` as in v10. This replaces `tfe_project.auth.role_name` and is independent of `authentication_settings.role_name`.
 - `additional_tfe_workspaces.<name>.override_authentication_settings` — per-workspace override of `add_permissions_boundary`, `role_name`, `scope`, `set_terraform_role_arn_variables` and `roles`. The default workspace has no counterpart by design: it is configured through `authentication_settings` directly, so there is nothing for it to override.
 
 #### Moved (v11.0.0)
@@ -38,7 +39,7 @@ See the [Authentication section of the README](README.md#authentication) for the
 | `permissions_boundaries` | `authentication_settings.permissions_boundaries` |
 | `tfe_workspace.policy` | `authentication_settings.roles.<phase>.policy` |
 | `tfe_workspace.policy_arns` | `authentication_settings.roles.<phase>.policy_arns` |
-| `tfe_workspace.role_name` | `authentication_settings.role_name` |
+| `tfe_workspace.role_name` | `authentication_settings.role_name` (default workspace only, not inherited by additional workspaces) |
 | `additional_tfe_workspaces.<name>.policy` | `additional_tfe_workspaces.<name>.override_authentication_settings.roles.<phase>.policy` |
 | `additional_tfe_workspaces.<name>.policy_arns` | `additional_tfe_workspaces.<name>.override_authentication_settings.roles.<phase>.policy_arns` |
 | `additional_tfe_workspaces.<name>.role_name` | `additional_tfe_workspaces.<name>.override_authentication_settings.role_name` |
@@ -46,7 +47,7 @@ See the [Authentication section of the README](README.md#authentication) for the
 | `tfe_project.auth.enabled` | `authentication_settings.scope = "project"`, or `tfe_project.enable_project_scoped_authentication = true` |
 | `tfe_project.auth.policy` | `authentication_settings.roles.<phase>.policy` |
 | `tfe_project.auth.policy_arns` | `authentication_settings.roles.<phase>.policy_arns` |
-| `tfe_project.auth.role_name` | `authentication_settings.role_name` |
+| `tfe_project.auth.role_name` | `tfe_project.role_name` |
 
 The `tfe_project.auth` object is removed entirely; project-scoped roles are now configured through `authentication_settings` like every other role.
 
@@ -57,12 +58,11 @@ The `tfe_project.auth` object is removed entirely; project-scoped roles are now 
 
 ### Behaviour (v11.0.0)
 
-1. **Three roles per workspace by default.** `authentication_settings.roles` defaults to `run` and `apply` with `AdministratorAccess` and `plan` with `ReadOnlyAccess`. Where v10 created one role per workspace, v11 creates three and sets `TFC_AWS_RUN_ROLE_ARN`, `TFC_AWS_PLAN_ROLE_ARN` and `TFC_AWS_APPLY_ROLE_ARN`. Terraform Cloud uses the phase-specific ARN when it is present and falls back to the run role otherwise.
-2. **The default workspace's run role is renamed, by this module's new default rather than by the child module.** In the child module the run role is the unsuffixed one — `Plan` and `Apply` are appended for the new phase-specific roles only — and its state is migrated in place, so adding plan and apply roles is purely additive. What does change is the default that this module passes down: `tfe_workspace.role_name` defaulted to `TFEPipeline` in v10, while `authentication_settings.role_name` defaults to `null`, which lets the child module derive the name from the workspace name. For an account named `my-aws-account`, the default workspace's run role therefore becomes `TFEPipelineMyAwsAccountRole` instead of `TFEPipelineRole`. Because IAM role names cannot change in place, that **replaces the role** and changes its ARN. The new default is what makes [scenario 3](README.md#scenario-3-project-scoped-roles-alongside-per-workspace-roles) possible — in v10 the default workspace role and the project role were both named `TFEPipeline` and could not coexist. Additional workspaces are unaffected: their names were already derived this way. Set `authentication_settings.role_name = "TFEPipeline"` to keep the v10 name.
-3. **Permissions boundaries are attached automatically.** In v10 you configured `permissions_boundaries` *and* opted in per workspace with `add_permissions_boundary = true`. In v11, configuring `authentication_settings.permissions_boundaries` attaches the workspace boundary to every role the module creates. If you previously configured boundaries but left the opt-in off, those roles now get a boundary.
-4. **Both boundaries are now required together.** `workspace_boundary` and `workload_boundary` are mandatory fields inside `authentication_settings.permissions_boundaries`; in v10 either could be set on its own. `workspace_boundary_name` now defaults to `pipeline_boundary` and `workload_boundary_name` to `workload_boundary`.
-5. **Role ARNs are also published as Terraform variables.** `authentication_settings.set_terraform_role_arn_variables` defaults to `true`, adding `tfc_aws_run_role_arn`, `tfc_aws_plan_role_arn` and `tfc_aws_apply_role_arn` Terraform-category variables next to the `TFC_AWS_*` environment variables. This is new in v11; set it to `false` to keep only the environment variables.
-6. **`tfe_project.enabled` defaults to `true` when project-scoped authentication is enabled**, since those roles need a project. Setting it to `false` in that case is rejected. Otherwise it still defaults to `false`.
+1. **Three roles per workspace by default.** `authentication_settings.roles` defaults to `run` and `apply` with `AdministratorAccess` and `plan` with `ReadOnlyAccess`. Where v10 created one role per workspace, v11 creates three and sets `TFC_AWS_RUN_ROLE_ARN`, `TFC_AWS_PLAN_ROLE_ARN` and `TFC_AWS_APPLY_ROLE_ARN`. HCP Terraform uses the phase-specific ARN when it is present and falls back to the run role otherwise.
+2. **Permissions boundaries are attached automatically.** In v10 you configured `permissions_boundaries` *and* opted in per workspace with `add_permissions_boundary = true`. In v11, configuring `authentication_settings.permissions_boundaries` attaches the workspace boundary to every role the module creates. If you previously configured boundaries but left the opt-in off, those roles now get a boundary.
+3. **Both boundaries are now required together.** `workspace_boundary` and `workload_boundary` are mandatory fields inside `authentication_settings.permissions_boundaries`; in v10 either could be set on its own. `workspace_boundary_name` now defaults to `pipeline_boundary` and `workload_boundary_name` to `workload_boundary`.
+4. **Role ARNs are also published as Terraform variables.** `authentication_settings.set_terraform_role_arn_variables` defaults to `true`, adding `tfc_aws_run_role_arn`, `tfc_aws_plan_role_arn` and `tfc_aws_apply_role_arn` Terraform-category variables next to the `TFC_AWS_*` environment variables. This is new in v11; set it to `false` to keep only the environment variables.
+5. **`tfe_project.enabled` defaults to `true` when project-scoped authentication is enabled**, since those roles need a project. Setting it to `false` in that case is rejected. Otherwise it still defaults to `false`.
 
 > [!WARNING]
 > Anything outside this module that grants access to a pipeline role by ARN — S3 bucket policies, KMS key policies, cross-account trust policies, SCP conditions — breaks when a role is replaced. Check for such references before applying, and update them in the same change.
@@ -75,7 +75,7 @@ Pick one of the two paths below, then run `terraform init -upgrade` and review `
 
 Reproduces one `AdministratorAccess` role per workspace, with the same names and the same workspace variables as v10.
 
-Set `roles` to `run` only, and turn the new Terraform-category variables off:
+Set `roles` to `run` only and turn the new Terraform-category variables off.
 
 ```hcl
 module "aws_account" {
@@ -120,7 +120,7 @@ additional_tfe_workspaces = {
 }
 ```
 
-If you used `tfe_project.auth.enabled = true` next to workspace authentication, replace it with the escape hatch that keeps both sets of roles:
+If you used `tfe_project.auth.enabled = true` next to workspace authentication, replace it with the escape hatch that keeps both sets of roles, and move the project's role name alongside it:
 
 ```hcl
 authentication_settings = {
@@ -130,8 +130,11 @@ authentication_settings = {
 
 tfe_project = {
   enable_project_scoped_authentication = true
+  role_name                            = "TFEPipelineProject" # was tfe_project.auth.role_name
 }
 ```
+
+`tfe_project.role_name` is independent of `authentication_settings.role_name`, so the two sets of roles are named separately. Both default to `TFEPipeline` as they did in v10, and this is the one combination where they end up in the same account, so the module requires one of them to be named explicitly — hence the value above. In v10 this combination already forced you to customise one of the two names, so carry that same value over into its new home and both roles keep the names they have today.
 
 Workspaces that had `enable_workspace_authentication = false` have no equivalent, by design — see the removed variables above. Either let them get roles, or move the whole module to `authentication_settings.scope = "project"` so a single set of project roles serves every workspace.
 

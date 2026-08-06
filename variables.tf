@@ -43,8 +43,8 @@ variable "account_variable_set" {
 
 variable "authentication_settings" {
   type = object({
-    role_name                        = optional(string)              # automatically set by the module if not provided
-    scope                            = optional(string, "workspace") # either "project" or "workspace"
+    role_name                        = optional(string, "TFEPipeline") # base role name for the tfe_workspace or project, never inherited by additional workspaces
+    scope                            = optional(string, "workspace")   # either "project" or "workspace"
     set_terraform_role_arn_variables = optional(bool, true)
 
     permissions_boundaries = optional(object({
@@ -74,7 +74,7 @@ variable "authentication_settings" {
     })
   })
   default     = {}
-  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace."
+  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace. `role_name` names the default workspace's roles only and defaults to \"TFEPipeline\"; it is not inherited by additional workspaces, which derive their name from the workspace name, since every IAM role name must be unique."
 
   validation {
     condition     = contains(["project", "workspace"], var.authentication_settings.scope)
@@ -89,7 +89,8 @@ variable "tfe_project" {
 
     default_agent_pool_id                = optional(string)
     default_execution_mode               = optional(string)
-    enable_project_scoped_authentication = optional(bool) # defaults to true when authentication_settings.scope is "project"
+    enable_project_scoped_authentication = optional(bool)   # defaults to true when authentication_settings.scope is "project"
+    role_name                            = optional(string) # names the project-scoped roles, falls back to authentication_settings.role_name
     variable_set_ids                     = optional(map(string), {})
 
     variable_set = optional(object({
@@ -99,7 +100,7 @@ variable "tfe_project" {
     }), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles, for example for workspaces created outside of this module. `enabled` defaults to true whenever project-scoped authentication is enabled, since it requires a project, and false otherwise."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles, for example for workspaces created outside of this module. `enabled` defaults to true whenever project-scoped authentication is enabled, since it requires a project, and false otherwise. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` (\"TFEPipeline\" by default) when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles, since both would otherwise resolve to the same name."
 
   validation {
     condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
@@ -109,6 +110,18 @@ variable "tfe_project" {
   validation {
     condition     = var.tfe_project.enabled != false || !coalesce(var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
     error_message = "tfe_project.enabled cannot be set to false when project-scoped authentication is enabled, either through authentication_settings.scope or tfe_project.enable_project_scoped_authentication."
+  }
+
+  // The project roles fall back to `authentication_settings.role_name`, which also names the default
+  // workspace's roles, so the two have to be told apart whenever both are created in the same account.
+  validation {
+    condition = (
+      !coalesce(var.tfe_project.enable_project_scoped_authentication, false) ||
+      var.authentication_settings.scope != "workspace" ||
+      !var.create_default_workspace ||
+      coalesce(var.tfe_project.role_name, var.authentication_settings.role_name) != var.authentication_settings.role_name
+    )
+    error_message = "tfe_project.role_name must be set to a name other than authentication_settings.role_name when project-scoped roles are created alongside the default workspace's roles, since both are IAM roles in the same account. Left unset it falls back to authentication_settings.role_name (\"TFEPipeline\" by default), so name it explicitly, for example tfe_project.role_name = \"TFEPipelineProject\"."
   }
 
   validation {
@@ -169,8 +182,8 @@ variable "additional_tfe_workspaces" {
     workspace_tags                               = optional(map(string))
 
     override_authentication_settings = optional(object({
-      add_permissions_boundary         = optional(bool) # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
-      role_name                        = optional(string)
+      add_permissions_boundary         = optional(bool)   # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
+      role_name                        = optional(string) # derived from the workspace name when null, never inherited from authentication_settings
       scope                            = optional(string) # only accepts "workspace", inherits authentication_settings.scope when null
       set_terraform_role_arn_variables = optional(bool)
 
@@ -217,7 +230,7 @@ variable "additional_tfe_workspaces" {
     })), null)
   }))
   default     = {}
-  description = "Additional TFE workspaces. Set `override_authentication_settings.scope` to \"workspace\" to give a workspace its own IAM roles while authentication_settings.scope is \"project\"; leave it null to follow authentication_settings.scope."
+  description = "Additional TFE workspaces. Set `override_authentication_settings.scope` to \"workspace\" to give a workspace its own IAM roles while authentication_settings.scope is \"project\"; leave it null to follow authentication_settings.scope. Every field of `override_authentication_settings` falls back to `authentication_settings` when null, except `role_name`, which is derived from the workspace name instead so that role names stay unique."
 
   validation {
     condition = alltrue([
