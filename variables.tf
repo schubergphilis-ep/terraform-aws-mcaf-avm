@@ -43,7 +43,7 @@ variable "account_variable_set" {
 
 variable "authentication_settings" {
   type = object({
-    role_name_prefix                 = optional(string)              # automatically set by the module if not provided
+    role_name                        = optional(string)              # automatically set by the module if not provided
     scope                            = optional(string, "workspace") # either "project" or "workspace"
     set_terraform_role_arn_variables = optional(bool, true)
 
@@ -170,7 +170,7 @@ variable "additional_tfe_workspaces" {
 
     override_authentication_settings = optional(object({
       add_permissions_boundary         = optional(bool) # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
-      role_name_prefix                 = optional(string)
+      role_name                        = optional(string)
       scope                            = optional(string) # only accepts "workspace", inherits authentication_settings.scope when null
       set_terraform_role_arn_variables = optional(bool)
 

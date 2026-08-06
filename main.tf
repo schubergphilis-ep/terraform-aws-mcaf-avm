@@ -273,7 +273,7 @@ module "tfe_project_auth" {
   }
 
   role_settings = {
-    name                     = coalesce(var.authentication_settings.role_name_prefix, "TFEPipeline") // Unlike the workspace module, the auth submodule has no fallback for a null name.
+    name                     = coalesce(var.authentication_settings.role_name, "TFEPipeline") // Unlike the workspace module, the auth submodule has no fallback for a null name.
     path                     = var.path
     permissions_boundary_arn = local.permissions_boundary_arn
 
@@ -337,7 +337,7 @@ module "tfe_workspace" {
     oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
 
     role_settings = {
-      name                             = var.authentication_settings.role_name_prefix
+      name                             = var.authentication_settings.role_name
       path                             = var.path
       permissions_boundary_arn         = local.permissions_boundary_arn
       set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
@@ -401,7 +401,7 @@ module "additional_tfe_workspaces" {
 
     // Every setting falls back to `authentication_settings` when the workspace does not override it
     role_settings = {
-      name                             = try(coalesce(each.value.override_authentication_settings.role_name_prefix, var.authentication_settings.role_name_prefix), null)
+      name                             = try(coalesce(each.value.override_authentication_settings.role_name, var.authentication_settings.role_name), null)
       path                             = var.path
       permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.add_permissions_boundary, true) ? local.permissions_boundary_arn : null
       set_terraform_role_arn_variables = coalesce(each.value.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)
