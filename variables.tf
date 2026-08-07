@@ -41,32 +41,111 @@ variable "account_variable_set" {
   description = "Settings of variable set that is attached to each workspace"
 }
 
+variable "authentication_settings" {
+  type = object({
+    role_name                        = optional(string, "TFEPipeline") # base role name for the tfe_workspace or project, never inherited by additional workspaces
+    scope                            = optional(string, "workspace")   # either "project" or "workspace"
+    set_terraform_role_arn_variables = optional(bool, true)
+
+    permissions_boundaries = optional(object({
+      workspace_boundary      = string
+      workspace_boundary_name = optional(string, "pipeline_boundary")
+      workload_boundary       = string
+      workload_boundary_name  = optional(string, "workload_boundary")
+    }))
+
+    roles = optional(object({
+      run = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      plan = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      apply = optional(object({
+        policy      = optional(string)
+        policy_arns = optional(set(string), [])
+      }))
+      }), {
+      run = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+      plan = {
+        policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"]
+
+        // ReadOnlyAccess grants no access to secret values or to decrypting, which a plan does need
+        // whenever the configuration reads a secret or a KMS-encrypted resource.
+        policy = <<-EOT
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "SensitiveDataReads",
+                "Effect": "Allow",
+                "Action": [
+                  "secretsmanager:GetSecretValue",
+                  "kms:Decrypt",
+                  "kms:GenerateDataKey",
+                  "kms:GenerateDataKeyPair"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        EOT
+      }
+      apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+    })
+  })
+  default     = {}
+  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace. `role_name` is the base role name for the default workspace's roles and, unless `tfe_project.role_name` overrides it, for the project-scoped roles too."
+
+  validation {
+    condition     = contains(["project", "workspace"], var.authentication_settings.scope)
+    error_message = "Authentication scope must be either \"project\" or \"workspace\"."
+  }
+}
+
 variable "tfe_project" {
   type = object({
-    enabled = optional(bool, false)
+    enabled = optional(bool) # defaults to true when project-scoped authentication is enabled
     name    = optional(string)
 
-    default_execution_mode = optional(string)
-    default_agent_pool_id  = optional(string)
+    default_agent_pool_id                = optional(string)
+    default_execution_mode               = optional(string)
+    enable_project_scoped_authentication = optional(bool)   # defaults to true when authentication_settings.scope is "project"
+    role_name                            = optional(string) # names the project-scoped roles, falls back to authentication_settings.role_name
+    variable_set_ids                     = optional(map(string), {})
 
     variable_set = optional(object({
       clear_text_env_variables       = optional(map(string), {})
       clear_text_hcl_variables       = optional(map(string), {})
       clear_text_terraform_variables = optional(map(string), {})
     }), {})
-
-    variable_set_ids = optional(map(string), {})
-
-    auth = optional(object({
-      enabled                  = optional(bool, false)
-      add_permissions_boundary = optional(bool, false)
-      policy                   = optional(string)
-      policy_arns              = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
-      role_name                = optional(string, "TFEPipeline")
-    }), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles."
+
+  validation {
+    condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
+    error_message = "tfe_project.enable_project_scoped_authentication cannot be set to false when authentication_settings.scope is \"project\"."
+  }
+
+  validation {
+    condition     = var.tfe_project.enabled != false || !coalesce(var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
+    error_message = "tfe_project.enabled cannot be set to false when project-scoped authentication is enabled, either through authentication_settings.scope or tfe_project.enable_project_scoped_authentication."
+  }
+
+  // The project roles fall back to `authentication_settings.role_name`, which also names the default
+  // workspace's roles, so the two have to be told apart whenever both are created in the same account.
+  validation {
+    condition = (
+      !coalesce(var.tfe_project.enable_project_scoped_authentication, false) ||
+      var.authentication_settings.scope != "workspace" ||
+      !var.create_default_workspace ||
+      coalesce(var.tfe_project.role_name, var.authentication_settings.role_name) != var.authentication_settings.role_name
+    )
+    error_message = "tfe_project.role_name must be set to a name other than authentication_settings.role_name when project-scoped roles are created alongside the default workspace's roles, since both are IAM roles in the same account. Left unset it falls back to authentication_settings.role_name (\"TFEPipeline\" by default), so name it explicitly, for example tfe_project.role_name = \"TFEPipelineProject\"."
+  }
 
   validation {
     condition = (
@@ -87,7 +166,6 @@ variable "tfe_project" {
 
 variable "additional_tfe_workspaces" {
   type = map(object({
-    add_permissions_boundary                     = optional(bool, false)
     agent_pool_id                                = optional(string)
     allow_destroy_plan                           = optional(bool)
     assessments_enabled                          = optional(bool)
@@ -102,19 +180,15 @@ variable "additional_tfe_workspaces" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = optional(string)
     description                                  = optional(string)
-    enable_workspace_authentication              = optional(bool)
     execution_mode                               = optional(string)
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
     global_remote_state                          = optional(bool, false)
     name                                         = optional(string)
-    policy                                       = optional(string)
-    policy_arns                                  = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
     project_id                                   = optional(string)
     queue_all_runs                               = optional(bool)
     remote_state_consumer_ids                    = optional(set(string))
     repository_identifier                        = optional(string)
-    role_name                                    = optional(string)
     sensitive_env_variables                      = optional(map(string), {})
     sensitive_hcl_variables                      = optional(map(object({ sensitive = string })), {})
     sensitive_terraform_variables                = optional(map(string), {})
@@ -129,6 +203,28 @@ variable "additional_tfe_workspaces" {
     vcs_oauth_token_id                           = optional(string)
     working_directory                            = optional(string)
     workspace_tags                               = optional(map(string))
+
+    override_authentication_settings = optional(object({
+      add_permissions_boundary         = optional(bool)   # defaults to true when authentication_settings.permissions_boundaries is set, set to false to opt this workspace out
+      role_name                        = optional(string) # derived from the workspace name when null, never inherited from authentication_settings
+      scope                            = optional(string) # only accepts "workspace", inherits authentication_settings.scope when null
+      set_terraform_role_arn_variables = optional(bool)
+
+      roles = optional(object({
+        run = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        plan = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+        apply = optional(object({
+          policy      = optional(string)
+          policy_arns = optional(set(string), [])
+        }))
+      }), {})
+    }), {})
 
     notification_configuration = optional(map(object({
       destination_type = string
@@ -157,7 +253,23 @@ variable "additional_tfe_workspaces" {
     })), null)
   }))
   default     = {}
-  description = "Additional TFE workspaces"
+  description = "Additional TFE workspaces. Set `override_authentication_settings.scope` to \"workspace\" to give a workspace its own IAM roles while authentication_settings.scope is \"project\"; leave it null to follow authentication_settings.scope. Every field of `override_authentication_settings` falls back to `authentication_settings` when null, except `role_name`, which is derived from the workspace name instead so that role names stay unique."
+
+  validation {
+    condition = alltrue([
+      for name, workspace in var.additional_tfe_workspaces :
+      contains(["workspace"], coalesce(workspace.override_authentication_settings.scope, "workspace"))
+    ])
+    error_message = "override_authentication_settings.scope can only be set to \"workspace\"."
+  }
+
+  validation {
+    condition = alltrue([
+      for name, workspace in var.additional_tfe_workspaces :
+      !coalesce(workspace.override_authentication_settings.add_permissions_boundary, false)
+    ]) || var.authentication_settings.permissions_boundaries != null
+    error_message = "override_authentication_settings.add_permissions_boundary can only be enabled when authentication_settings.permissions_boundaries is set."
+  }
 }
 
 variable "create_default_workspace" {
@@ -183,19 +295,8 @@ variable "tags" {
   description = "A map of tags to assign to all resources"
 }
 
-variable "permissions_boundaries" {
-  type = object({
-    workspace_boundary      = optional(string)
-    workspace_boundary_name = optional(string)
-    workload_boundary       = optional(string)
-    workload_boundary_name  = optional(string)
-  })
-  default = {}
-}
-
 variable "tfe_workspace" {
   type = object({
-    add_permissions_boundary                     = optional(bool, false)
     agent_pool_id                                = optional(string)
     allow_destroy_plan                           = optional(bool, true)
     assessments_enabled                          = optional(bool, true)
@@ -210,20 +311,16 @@ variable "tfe_workspace" {
     connect_vcs_repo                             = optional(bool, true)
     default_region                               = string
     description                                  = optional(string)
-    enable_workspace_authentication              = optional(bool, true)
     execution_mode                               = optional(string, "remote")
     file_triggers_enabled                        = optional(bool, true)
     force_delete                                 = optional(bool, false)
     global_remote_state                          = optional(bool, false)
     name                                         = optional(string)
     organization                                 = optional(string)
-    policy                                       = optional(string)
-    policy_arns                                  = optional(list(string), ["arn:aws:iam::aws:policy/AdministratorAccess"])
     project_id                                   = optional(string)
     queue_all_runs                               = optional(bool)
     remote_state_consumer_ids                    = optional(set(string))
     repository_identifier                        = optional(string)
-    role_name                                    = optional(string, "TFEPipeline")
     sensitive_env_variables                      = optional(map(string), {})
     sensitive_hcl_variables                      = optional(map(object({ sensitive = string })), {})
     sensitive_terraform_variables                = optional(map(string), {})

@@ -1,4 +1,13 @@
 locals {
+  # --- Authentication Settings ---
+
+  // Project-scoped roles are created when the scope selects them, or when they are explicitly
+  // enabled alongside the workspace scope via `tfe_project.enable_project_scoped_authentication`.
+  enable_project_scoped_authentication = coalesce(var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
+
+  // The workspace boundary is attached to every pipeline role created by this module whenever permissions boundaries are configured.
+  // Can be overridden for individual additional workspaces by setting `add_permissions_boundary` to false.
+  permissions_boundary_arn = var.authentication_settings.permissions_boundaries != null ? aws_iam_policy.workspace_boundary[0].arn : null
 
   # --- TFE Variables & Variable Sets ---
 
@@ -11,7 +20,7 @@ locals {
     // if environment, add environment = var.account.environment
     var.account.environment != null ? { environment = var.account.environment } : {},
     // if workload_boundary_arn, add workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn
-    var.permissions_boundaries.workload_boundary != null && var.permissions_boundaries.workload_boundary != null ? { workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn } : {}
+    var.authentication_settings.permissions_boundaries != null ? { workload_permissions_boundary_arn = aws_iam_policy.workload_boundary[0].arn } : {}
   )
 
   common_env_variables = {
@@ -22,12 +31,8 @@ locals {
 
   # --- TFE Settings ---
 
-  // Resolve whether authentication is enabled for each additional workspace, falling back to the
-  // default workspace setting when the workspace does not set it explicitly. 
-  additional_workspace_auth = {
-    for name, ws in var.additional_tfe_workspaces :
-    name => coalesce(ws.enable_workspace_authentication, var.tfe_workspace.enable_workspace_authentication)
-  }
+  // A project is required for project-scoped authentication, so enabling that scope enables the project unless it is explicitly configured.
+  tfe_project_enabled = coalesce(var.tfe_project.enabled, local.enable_project_scoped_authentication)
 
   tfe_project_name = coalesce(var.tfe_project.name, var.name)
 
@@ -67,12 +72,14 @@ module "account" {
 }
 
 resource "aws_iam_account_alias" "alias" {
-  provider      = aws.account
+  provider = aws.account
+
   account_alias = var.account.alias_prefix != null ? "${var.account.alias_prefix}${var.name}" : var.name
 }
 
 resource "aws_account_alternate_contact" "billing" {
-  count    = var.account.contact_billing == null ? 0 : 1
+  count = var.account.contact_billing == null ? 0 : 1
+
   provider = aws.account
 
   alternate_contact_type = "BILLING"
@@ -83,7 +90,8 @@ resource "aws_account_alternate_contact" "billing" {
 }
 
 resource "aws_account_alternate_contact" "operations" {
-  count    = var.account.contact_operations == null ? 0 : 1
+  count = var.account.contact_operations == null ? 0 : 1
+
   provider = aws.account
 
   alternate_contact_type = "OPERATIONS"
@@ -94,7 +102,8 @@ resource "aws_account_alternate_contact" "operations" {
 }
 
 resource "aws_account_alternate_contact" "security" {
-  count    = var.account.contact_security == null ? 0 : 1
+  count = var.account.contact_security == null ? 0 : 1
+
   provider = aws.account
 
   alternate_contact_type = "SECURITY"
@@ -117,19 +126,23 @@ resource "aws_iam_openid_connect_provider" "tfc_provider" {
 }
 
 resource "aws_iam_policy" "workspace_boundary" {
+  count = var.authentication_settings.permissions_boundaries != null ? 1 : 0
+
   provider = aws.account
-  count    = var.permissions_boundaries.workspace_boundary_name != null && var.permissions_boundaries.workspace_boundary != null ? 1 : 0
-  name     = var.permissions_boundaries.workspace_boundary_name
-  path     = var.path
-  policy   = templatefile(var.permissions_boundaries.workspace_boundary, { account_id = module.account.id })
+
+  name   = var.authentication_settings.permissions_boundaries.workspace_boundary_name
+  path   = var.path
+  policy = templatefile(var.authentication_settings.permissions_boundaries.workspace_boundary, { account_id = module.account.id })
 }
 
 resource "aws_iam_policy" "workload_boundary" {
+  count = var.authentication_settings.permissions_boundaries != null ? 1 : 0
+
   provider = aws.account
-  count    = var.permissions_boundaries.workload_boundary_name != null && var.permissions_boundaries.workload_boundary != null ? 1 : 0
-  name     = var.permissions_boundaries.workload_boundary_name
-  path     = var.path
-  policy   = templatefile(var.permissions_boundaries.workload_boundary, { account_id = module.account.id })
+
+  name   = var.authentication_settings.permissions_boundaries.workload_boundary_name
+  path   = var.path
+  policy = templatefile(var.authentication_settings.permissions_boundaries.workload_boundary, { account_id = module.account.id })
 }
 
 ################################################################################
@@ -143,7 +156,7 @@ resource "tfe_variable_set" "account" {
 }
 
 resource "tfe_variable" "account_variable_set_clear_text_env_variables" {
-  for_each = var.tfe_project.enabled ? var.account_variable_set.clear_text_env_variables : merge(var.account_variable_set.clear_text_env_variables, local.common_env_variables)
+  for_each = local.tfe_project_enabled ? var.account_variable_set.clear_text_env_variables : merge(var.account_variable_set.clear_text_env_variables, local.common_env_variables)
 
   key             = each.key
   value           = each.value
@@ -162,7 +175,7 @@ resource "tfe_variable" "account_variable_set_clear_text_hcl_variables" {
 }
 
 resource "tfe_variable" "account_variable_set_clear_text_terraform_variables" {
-  for_each = var.tfe_project.enabled ? var.account_variable_set.clear_text_terraform_variables : merge(var.account_variable_set.clear_text_terraform_variables, local.common_terraform_variables)
+  for_each = local.tfe_project_enabled ? var.account_variable_set.clear_text_terraform_variables : merge(var.account_variable_set.clear_text_terraform_variables, local.common_terraform_variables)
 
   key             = each.key
   value           = each.value
@@ -175,14 +188,14 @@ resource "tfe_variable" "account_variable_set_clear_text_terraform_variables" {
 ################################################################################
 
 resource "tfe_project" "default" {
-  count = var.tfe_project.enabled ? 1 : 0
+  count = local.tfe_project_enabled ? 1 : 0
 
   name         = local.tfe_project_name
   organization = var.tfe_workspace.organization
 }
 
 resource "tfe_project_settings" "default" {
-  count = var.tfe_project.enabled && (var.tfe_project.default_execution_mode != null || var.tfe_project.default_agent_pool_id != null) ? 1 : 0
+  count = local.tfe_project_enabled && (var.tfe_project.default_execution_mode != null || var.tfe_project.default_agent_pool_id != null) ? 1 : 0
 
   project_id             = tfe_project.default[0].id
   default_execution_mode = var.tfe_project.default_execution_mode
@@ -190,7 +203,7 @@ resource "tfe_project_settings" "default" {
 }
 
 module "tfe_project_variable_set" {
-  count = var.tfe_project.enabled && (var.tfe_project.variable_set != null || try(var.tfe_project.auth.enabled, false)) ? 1 : 0
+  count = local.tfe_project_enabled ? 1 : 0
 
   source  = "schubergphilis-ep/mcaf-variable-set/tfe"
   version = "~> 0.2.0"
@@ -235,32 +248,38 @@ module "tfe_project_variable_set" {
 }
 
 resource "tfe_project_variable_set" "default" {
-  for_each = (var.tfe_project.enabled && (length(var.tfe_project.variable_set_ids) > 0)) ? var.tfe_project.variable_set_ids : {}
+  for_each = (local.tfe_project_enabled && (length(var.tfe_project.variable_set_ids) > 0)) ? var.tfe_project.variable_set_ids : {}
 
   project_id      = tfe_project.default[0].id
   variable_set_id = each.value
 }
 
 module "tfe_project_auth" {
-  count = var.tfe_project.enabled && try(var.tfe_project.auth.enabled, false) ? 1 : 0
+  count = local.enable_project_scoped_authentication ? 1 : 0
 
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws//modules/auth"
-  version = "~> 5.0.0"
+  version = "~> 6.0.0"
 
-  path                     = var.path
-  permissions_boundary_arn = var.tfe_project.auth.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
-  policy                   = var.tfe_project.auth.policy
-  policy_arns              = var.tfe_project.auth.policy_arns
-  role_name                = var.tfe_project.auth.role_name
-  terraform_organization   = var.tfe_workspace.organization
-  variable_set_id          = module.tfe_project_variable_set[0].id
+  set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
+  terraform_organization           = var.tfe_workspace.organization
+  variable_set_id                  = module.tfe_project_variable_set[0].id
 
   oidc_settings = {
-    oidc_project_filter   = tfe_project.default[0].name
-    oidc_workspace_filter = "*"
-    provider_arn          = aws_iam_openid_connect_provider.tfc_provider.arn
+    provider_arn  = aws_iam_openid_connect_provider.tfc_provider.arn
+    project_scope = true
+    project_name  = tfe_project.default[0].name
+  }
+
+  role_settings = {
+    name                     = coalesce(var.tfe_project.role_name, var.authentication_settings.role_name)
+    path                     = var.path
+    permissions_boundary_arn = local.permissions_boundary_arn
+
+    apply = var.authentication_settings.roles.apply
+    plan  = var.authentication_settings.roles.plan
+    run   = var.authentication_settings.roles.run
   }
 }
 
@@ -274,7 +293,7 @@ module "tfe_workspace" {
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws"
-  version = "~> 5.0.0"
+  version = "~> 6.0.0"
 
   agent_pool_id                                = var.tfe_workspace.agent_pool_id
   allow_destroy_plan                           = var.tfe_workspace.allow_destroy_plan
@@ -288,7 +307,6 @@ module "tfe_workspace" {
   clear_text_hcl_variables                     = var.tfe_workspace.clear_text_hcl_variables
   clear_text_terraform_variables               = var.tfe_workspace.clear_text_terraform_variables
   description                                  = var.tfe_workspace.description
-  enable_authentication                        = var.tfe_workspace.enable_workspace_authentication
   execution_mode                               = var.tfe_workspace.execution_mode
   file_triggers_enabled                        = var.tfe_workspace.connect_vcs_repo != false ? var.tfe_workspace.file_triggers_enabled : false
   force_delete                                 = var.tfe_workspace.force_delete
@@ -297,16 +315,10 @@ module "tfe_workspace" {
   name                                         = coalesce(var.tfe_workspace.name, var.name)
   notification_configuration                   = var.tfe_workspace.notification_configuration
   oauth_token_id                               = var.tfe_workspace.connect_vcs_repo != false ? var.tfe_workspace.vcs_oauth_token_id : null
-  oidc_settings                                = var.tfe_workspace.enable_workspace_authentication ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
-  path                                         = var.path
-  permissions_boundary_arn                     = var.tfe_workspace.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
-  policy                                       = var.tfe_workspace.policy
-  policy_arns                                  = var.tfe_workspace.policy_arns
-  project_id                                   = var.tfe_project.enabled ? coalesce(var.tfe_workspace.project_id, try(tfe_project.default[0].id, null)) : var.tfe_workspace.project_id
+  project_id                                   = local.tfe_project_enabled ? coalesce(var.tfe_workspace.project_id, try(tfe_project.default[0].id, null)) : var.tfe_workspace.project_id
   queue_all_runs                               = var.tfe_workspace.queue_all_runs
   remote_state_consumer_ids                    = var.tfe_workspace.remote_state_consumer_ids
   repository_identifier                        = var.tfe_workspace.connect_vcs_repo ? var.tfe_workspace.repository_identifier : null
-  role_name                                    = var.tfe_workspace.role_name
   sensitive_env_variables                      = var.tfe_workspace.sensitive_env_variables
   sensitive_hcl_variables                      = var.tfe_workspace.sensitive_hcl_variables
   sensitive_terraform_variables                = var.tfe_workspace.sensitive_terraform_variables
@@ -320,6 +332,21 @@ module "tfe_workspace" {
   variable_set_ids                             = merge({ (local.account_variable_set_name) : tfe_variable_set.account.id }, var.tfe_workspace.variable_set_ids)
   working_directory                            = var.tfe_workspace.set_working_directory ? coalesce(var.tfe_workspace.working_directory, local.tfe_workspace.working_directory) : null
   workspace_tags                               = var.tfe_workspace.workspace_tags
+
+  authentication = var.authentication_settings.scope == "workspace" ? {
+    oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
+
+    role_settings = {
+      name                             = var.authentication_settings.role_name
+      path                             = var.path
+      permissions_boundary_arn         = local.permissions_boundary_arn
+      set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
+
+      apply = var.authentication_settings.roles.apply
+      plan  = var.authentication_settings.roles.plan
+      run   = var.authentication_settings.roles.run
+    }
+  } : null
 }
 
 module "additional_tfe_workspaces" {
@@ -328,7 +355,7 @@ module "additional_tfe_workspaces" {
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws"
-  version = "~> 5.0.0"
+  version = "~> 6.0.0"
 
   agent_pool_id                                = each.value.agent_pool_id != null ? each.value.agent_pool_id : var.tfe_workspace.agent_pool_id
   allow_destroy_plan                           = each.value.allow_destroy_plan != null ? each.value.allow_destroy_plan : var.tfe_workspace.allow_destroy_plan
@@ -342,7 +369,6 @@ module "additional_tfe_workspaces" {
   clear_text_hcl_variables                     = each.value.clear_text_hcl_variables
   clear_text_terraform_variables               = each.value.clear_text_terraform_variables
   description                                  = each.value.description
-  enable_authentication                        = local.additional_workspace_auth[each.key]
   execution_mode                               = coalesce(each.value.execution_mode, var.tfe_workspace.execution_mode)
   file_triggers_enabled                        = each.value.connect_vcs_repo != false ? each.value.file_triggers_enabled : false
   force_delete                                 = each.value.force_delete
@@ -351,17 +377,11 @@ module "additional_tfe_workspaces" {
   name                                         = coalesce(each.value.name, each.key)
   notification_configuration                   = each.value.notification_configuration != null ? each.value.notification_configuration : var.tfe_workspace.notification_configuration
   oauth_token_id                               = each.value.connect_vcs_repo != false ? try(coalesce(each.value.vcs_oauth_token_id, var.tfe_workspace.vcs_oauth_token_id), null) : null
-  oidc_settings                                = local.additional_workspace_auth[each.key] ? { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn } : null
-  path                                         = var.path
-  permissions_boundary_arn                     = each.value.add_permissions_boundary == true ? aws_iam_policy.workspace_boundary[0].arn : null
-  policy                                       = each.value.policy
-  policy_arns                                  = each.value.policy_arns
-  project_id                                   = var.tfe_project.enabled ? coalesce(each.value.project_id, var.tfe_workspace.project_id, try(tfe_project.default[0].id, null)) : coalesce(each.value.project_id, var.tfe_workspace.project_id)
+  project_id                                   = local.tfe_project_enabled ? coalesce(each.value.project_id, var.tfe_workspace.project_id, try(tfe_project.default[0].id, null)) : try(coalesce(each.value.project_id, var.tfe_workspace.project_id), null)
   queue_all_runs                               = each.value.queue_all_runs
   region                                       = each.value.default_region
   remote_state_consumer_ids                    = each.value.remote_state_consumer_ids
-  repository_identifier                        = each.value.connect_vcs_repo != false ? coalesce(each.value.repository_identifier, var.tfe_workspace.repository_identifier) : null
-  role_name                                    = coalesce(each.value.role_name, "TFEPipeline${replace(title(coalesce(each.value.name, each.key)), "/[_-]/", "")}")
+  repository_identifier                        = each.value.connect_vcs_repo != false ? try(coalesce(each.value.repository_identifier, var.tfe_workspace.repository_identifier), null) : null
   sensitive_env_variables                      = each.value.sensitive_env_variables
   sensitive_hcl_variables                      = each.value.sensitive_hcl_variables
   sensitive_terraform_variables                = each.value.sensitive_terraform_variables
@@ -375,4 +395,22 @@ module "additional_tfe_workspaces" {
   variable_set_ids                             = merge({ (local.account_variable_set_name) : tfe_variable_set.account.id }, each.value.variable_set_ids)
   working_directory                            = coalesce(each.value.set_working_directory, var.tfe_workspace.set_working_directory) ? coalesce(each.value.working_directory, "terraform/${coalesce(each.value.name, each.key)}") : null
   workspace_tags                               = each.value.workspace_tags
+
+  authentication = coalesce(each.value.override_authentication_settings.scope, var.authentication_settings.scope) == "workspace" ? {
+    oidc_settings = { provider_arn = aws_iam_openid_connect_provider.tfc_provider.arn }
+
+    // Every setting falls back to `authentication_settings` when the workspace does not override it,
+    // except the role name: it must be unique per role, so it is never inherited. Left unset, the
+    // workspace module automatically derives it from the workspace name.
+    role_settings = {
+      name                             = each.value.override_authentication_settings.role_name
+      path                             = var.path
+      permissions_boundary_arn         = coalesce(each.value.override_authentication_settings.add_permissions_boundary, true) ? local.permissions_boundary_arn : null
+      set_terraform_role_arn_variables = coalesce(each.value.override_authentication_settings.set_terraform_role_arn_variables, var.authentication_settings.set_terraform_role_arn_variables)
+
+      apply = try(coalesce(each.value.override_authentication_settings.roles.apply, var.authentication_settings.roles.apply), null)
+      plan  = try(coalesce(each.value.override_authentication_settings.roles.plan, var.authentication_settings.roles.plan), null)
+      run   = try(coalesce(each.value.override_authentication_settings.roles.run, var.authentication_settings.roles.run), null)
+    }
+  } : null
 }

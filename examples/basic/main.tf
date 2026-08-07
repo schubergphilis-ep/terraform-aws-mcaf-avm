@@ -3,7 +3,9 @@ provider "aws" {
 }
 
 provider "mcaf" {
-  aws {}
+  aws {
+    region = "eu-west-1"
+  }
 }
 
 provider "tfe" {
