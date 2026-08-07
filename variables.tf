@@ -68,8 +68,31 @@ variable "authentication_settings" {
         policy_arns = optional(set(string), [])
       }))
       }), {
-      run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-      plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
+      run = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
+      plan = {
+        policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"]
+
+        // ReadOnlyAccess grants no access to secret values or to decrypting, which a plan does need
+        // whenever the configuration reads a secret or a KMS-encrypted resource.
+        policy = <<-EOT
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "SensitiveDataReads",
+                "Effect": "Allow",
+                "Action": [
+                  "secretsmanager:GetSecretValue",
+                  "kms:Decrypt",
+                  "kms:GenerateDataKey",
+                  "kms:GenerateDataKeyPair"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        EOT
+      }
       apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
     })
   })
