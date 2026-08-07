@@ -35,7 +35,12 @@ The defaults follow one rule: **a plan must never be able to modify infrastructu
 
 `ReadOnlyAccess` alone gives the plan role the rule but not the reach: it withholds reads a plan genuinely needs, so it fails as soon as the configuration touches an encrypted or sensitive resource. Reading an `aws_s3_object` from an SSE-KMS bucket, for instance, needs `kms:Decrypt` on the bucket key and not just `s3:GetObject`. Hence the inline policy alongside it, which stays within the rule: it returns data or derives a new key, it never changes an existing resource.
 
-These defaults are a working starting point, not a recommendation. **Scope every role down to what the workspace actually needs**: replace `AdministratorAccess` on `run` and `apply` with the permissions that workspace manages, and further narrow down the `plan` role. Set this module-wide through `authentication_settings.roles`, or per workspace through `override_authentication_settings.roles` — see [variation 2](#variation-2-different-settings-for-a-single-workspace). `roles` is replaced as a whole rather than merged, so list every phase you want to keep.
+These defaults are a working starting point, not a recommendation. **Scope every role down to what the workspace actually needs**: replace `AdministratorAccess` on `run` and `apply` with the permissions that workspace manages, and further narrow down the `plan` role. Set this module-wide through `authentication_settings.roles`, or per workspace through `override_authentication_settings.roles` — see [variation 2](#variation-2-different-settings-for-a-single-workspace).
+
+The two combine with the defaults differently:
+
+* `authentication_settings.roles` replaces them as a whole, so list every phase you want to keep
+* `override_authentication_settings.roles` is merged per phase, so every phase left out of an override keeps its module-wide definition.
 
 ### Role names
 
@@ -91,15 +96,11 @@ Because `roles` is replaced rather than merged, leaving `plan` and `apply` out m
 
 ##### Variation 2: different settings for a single workspace
 
-Use `override_authentication_settings` on an additional workspace to deviate from the module-wide settings. Every field falls back to `authentication_settings` when it is not set, so you only specify what differs:
+Use `override_authentication_settings` on an additional workspace to deviate from the module-wide settings. Every field falls back to `authentication_settings` when it is not set — except `role_name`, which is derived from the workspace name instead — so you only specify what differs:
 
 ```hcl
 authentication_settings = {
-  roles = {
-    run   = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-    plan  = { policy_arns = ["arn:aws:iam::aws:policy/ReadOnlyAccess"] }
-    apply = { policy_arns = ["arn:aws:iam::aws:policy/AdministratorAccess"] }
-  }
+  ...
 }
 
 additional_tfe_workspaces = {
@@ -123,7 +124,7 @@ additional_tfe_workspaces = {
 }
 ```
 
-Note that `roles` is replaced as a whole here too: an override that sets only `plan` and `apply` drops the module-wide `run` role for that workspace.
+Note that `roles` is merged per phase here, unlike `authentication_settings.roles`: an override that sets only `plan` and `apply` leaves the module-wide `run` role in place for that workspace.
 
 A workspace can also opt out of the permissions boundary with `override_authentication_settings.add_permissions_boundary = false` — see [IAM Permissions Boundaries](#iam-permissions-boundaries).
 
@@ -154,18 +155,16 @@ additional_tfe_workspaces = {
   # Uses the project-scoped roles.
   baseline = {}
 
-  # Gets its own roles, with permissions that no other workspace in the project has.
+  # Gets its own set of roles, trusted by this workspace alone.
   isolated = {
     override_authentication_settings = {
       scope = "workspace"
-
-      roles = {
-        run = { policy = data.aws_iam_policy_document.isolated.json }
-      }
     }
   }
 }
 ```
+
+The isolated workspace keeps the module-wide role definitions here — only the trust policy differs, since the roles are its own. Add `roles` to the override to give it different permissions as well, bearing in mind that any phase you leave out inherits its module-wide definition.
 
 The workspace-level `TFC_AWS_*` variables take precedence over those from the project variable set, so the workspace uses its own roles even though the project ones remain attached. `override_authentication_settings.scope` accepts only `null` (follow `authentication_settings.scope`) or `"workspace"`; a workspace cannot opt *into* the project scope while the module-wide scope is `"workspace"` — that is what scenario 3 is for.
 
