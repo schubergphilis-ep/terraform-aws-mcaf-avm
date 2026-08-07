@@ -283,6 +283,48 @@ module "tfe_project_auth" {
   }
 }
 
+data "tfe_team" "default" {
+  for_each = toset(keys(var.tfe_project.team_access))
+
+  name         = each.value
+  organization = var.tfe_workspace.organization
+}
+
+resource "tfe_team_project_access" "default" {
+  for_each = (var.tfe_project.enabled && (length(keys(var.tfe_project.team_access)) > 0)) ? var.tfe_project.team_access : {}
+
+  access     = each.value.access
+  team_id    = data.tfe_team.default[each.key].id
+  project_id = tfe_project.default[0].id
+
+  dynamic "project_access" {
+    for_each = each.value.project_access != null ? { create = true } : {}
+
+    content {
+      settings      = each.value.project_access["settings"]
+      teams         = each.value.project_access["teams"]
+      variable_sets = each.value.project_access["variable_sets"]
+    }
+  }
+
+  dynamic "workspace_access" {
+    for_each = each.value.workspace_access != null ? { create = true } : {}
+
+    content {
+      create           = each.value.workspace_access["create"]
+      delete           = each.value.workspace_access["delete"]
+      locking          = each.value.workspace_access["locking"]
+      move             = each.value.workspace_access["move"]
+      policy_overrides = each.value.workspace_access["policy_overrides"]
+      run_tasks        = each.value.workspace_access["run_tasks"]
+      runs             = each.value.workspace_access["runs"]
+      sentinel_mocks   = each.value.workspace_access["sentinel_mocks"]
+      state_versions   = each.value.workspace_access["state_versions"]
+      variables        = each.value.workspace_access["variables"]
+    }
+  }
+}
+
 ################################################################################
 # Terraform Cloud Workspace(s)
 ################################################################################
