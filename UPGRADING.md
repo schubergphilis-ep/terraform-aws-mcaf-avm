@@ -18,19 +18,19 @@ See the [Authentication section of the README](README.md#authentication) for the
 
 ### Variables (v11.0.0)
 
-#### Added (v11.0.0)
+#### Added Variables (v11.0.0)
 
 - `authentication_settings` — the new home for all authentication inputs:
-  - `role_name` — base IAM role name for the default workspace's roles, defaults to `TFEPipeline` exactly as `tfe_workspace.role_name` did.
+  - `role_name` — base IAM role name for the account, defaults to `TFEPipeline` exactly as `tfe_workspace.role_name` did. Names the default workspace's roles, and the project-scoped roles unless `tfe_project.role_name` overrides it.
   - `scope` — `"workspace"` (default) or `"project"`.
   - `set_terraform_role_arn_variables` — also expose the role ARNs as Terraform-category variables, defaults to `true`.
   - `permissions_boundaries` — `workspace_boundary`, `workspace_boundary_name`, `workload_boundary`, `workload_boundary_name`.
   - `roles` — `run`, `plan` and `apply`, each accepting `policy` and `policy_arns`.
 - `tfe_project.enable_project_scoped_authentication` — create project-scoped roles *in addition to* per-workspace roles, for workspaces not managed by this module.
-- `tfe_project.role_name` — names the project-scoped roles, defaults to `TFEPipeline` as in v10. This replaces `tfe_project.auth.role_name` and is independent of `authentication_settings.role_name`.
+- `tfe_project.role_name` — names the project-scoped roles, replacing `tfe_project.auth.role_name`. Falls back to `authentication_settings.role_name` when unset.
 - `additional_tfe_workspaces.<name>.override_authentication_settings` — per-workspace override of `add_permissions_boundary`, `role_name`, `scope`, `set_terraform_role_arn_variables` and `roles`. The default workspace has no counterpart by design: it is configured through `authentication_settings` directly, so there is nothing for it to override.
 
-#### Moved (v11.0.0)
+#### Moved Variables (v11.0.0)
 
 `<phase>` is one of `run`, `plan` or `apply`.
 
@@ -51,7 +51,7 @@ See the [Authentication section of the README](README.md#authentication) for the
 
 The `tfe_project.auth` object is removed entirely; project-scoped roles are now configured through `authentication_settings` like every other role.
 
-#### Removed (v11.0.0)
+#### Removed Variables (v11.0.0)
 
 - `tfe_workspace.enable_workspace_authentication` & `additional_tfe_workspaces.<name>.enable_workspace_authentication` — a workspace either gets its own roles or uses the project-scoped roles, decided by `authentication_settings.scope` and `override_authentication_settings.scope`. Switching authentication off entirely is no longer possible, and this is deliberate: an AVM-managed workspace exists to manage the account it belongs to, so it always needs a way to authenticate to it. There is no supported way to run this module without authentication.
 - `tfe_workspace.add_permissions_boundary` & `tfe_project.auth.add_permissions_boundary` — the workspace boundary is now attached to every role this module creates whenever `authentication_settings.permissions_boundaries` is set. Individual additional workspaces can opt out via `override_authentication_settings.add_permissions_boundary = false`.
@@ -72,6 +72,8 @@ The `tfe_project.auth` object is removed entirely; project-scoped roles are now 
 Pick one of the two paths below, then run `terraform init -upgrade` and review `terraform plan` before applying.
 
 #### Option 1: keep the v10 behaviour (v11.0.0)
+
+This is the "safest" migration path and can also be executed first before migrating to the new functionality, the result should be **0 change**, only state moves.
 
 Reproduces one `AdministratorAccess` role per workspace, with the same names and the same workspace variables as v10.
 
@@ -134,7 +136,7 @@ tfe_project = {
 }
 ```
 
-`tfe_project.role_name` is independent of `authentication_settings.role_name`, so the two sets of roles are named separately. Both default to `TFEPipeline` as they did in v10, and this is the one combination where they end up in the same account, so the module requires one of them to be named explicitly — hence the value above. In v10 this combination already forced you to customise one of the two names, so carry that same value over into its new home and both roles keep the names they have today.
+`tfe_project.role_name` falls back to `authentication_settings.role_name` when unset, and this is the one combination where the two sets of roles end up in the same account, so the module requires the project's name to be set explicitly — hence the value above. v10 already forced you to customise one of the two names for the same reason, so carry whichever value you had into its new home and both roles keep the names they have today.
 
 Workspaces that had `enable_workspace_authentication = false` have no equivalent, by design — see the removed variables above. Either let them get roles, or move the whole module to `authentication_settings.scope = "project"` so a single set of project roles serves every workspace.
 

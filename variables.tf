@@ -74,7 +74,7 @@ variable "authentication_settings" {
     })
   })
   default     = {}
-  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace. `role_name` names the default workspace's roles only and defaults to \"TFEPipeline\"; it is not inherited by additional workspaces, which derive their name from the workspace name, since every IAM role name must be unique."
+  description = "TFE AWS authentication settings. `scope` determines where the pipeline IAM roles are created: \"project\" creates a single set of roles shared by every workspace in the project, \"workspace\" creates a set of roles per workspace. `role_name` is the base role name for the default workspace's roles and, unless `tfe_project.role_name` overrides it, for the project-scoped roles too."
 
   validation {
     condition     = contains(["project", "workspace"], var.authentication_settings.scope)
@@ -100,7 +100,7 @@ variable "tfe_project" {
     }), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles, for example for workspaces created outside of this module. `enabled` defaults to true whenever project-scoped authentication is enabled, since it requires a project, and false otherwise. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` (\"TFEPipeline\" by default) when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles, since both would otherwise resolve to the same name."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles."
 
   validation {
     condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
