@@ -121,6 +121,27 @@ variable "tfe_project" {
       clear_text_hcl_variables       = optional(map(string), {})
       clear_text_terraform_variables = optional(map(string), {})
     }), {})
+
+    team_access = optional(map(object({
+      access = optional(string, null),
+      project_access = optional(object({
+        settings      = optional(string, null),
+        teams         = optional(string, null),
+        variable_sets = optional(string, null),
+      }), null),
+      workspace_access = optional(object({
+        create           = optional(bool, null),
+        delete           = optional(bool, null),
+        locking          = optional(bool, null),
+        move             = optional(bool, null),
+        policy_overrides = optional(bool, null),
+        run_tasks        = optional(bool, null),
+        runs             = optional(string, null),
+        sentinel_mocks   = optional(string, null),
+        state_versions   = optional(string, null),
+        variables        = optional(string, null)
+      }), null)
+    })), {})
   })
   default     = {}
   description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles."
@@ -161,6 +182,26 @@ variable "tfe_project" {
       var.tfe_project.default_execution_mode == "agent"
     )
     error_message = "Default agent pool ID can only be set if default execution mode is 'agent'"
+  }
+
+  validation {
+    condition = (
+      var.tfe_project.team_access == null ||
+      alltrue([
+        for team, config in var.tfe_project.team_access : (
+          (
+            contains(["admin", "maintain", "read", "write"], config.access) &&
+            config.project_access == null && config.workspace_access == null
+          ) ||
+          (
+            config.access == "custom" &&
+            (config.project_access != null && config.workspace_access != null)
+          )
+        )
+      ])
+    )
+
+    error_message = "Team access configuration is invalid. Each team must have a valid access (allowed values are 'admin', 'maintain', 'read', 'write', 'custom'), both project_access and workspace_access must be set if access is 'custom' and null if using a predefined access level."
   }
 }
 
