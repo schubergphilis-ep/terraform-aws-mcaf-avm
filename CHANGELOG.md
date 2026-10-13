@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [11.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v11.0.0...v11.1.0) (2026-10-13)
+
+
+### 🚀 Features
+
+* phase-aware aws.account provider with a module-created read-only plan role ([#9](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/issues/9)) ([9325163](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/93251634ce604f4d6de245e14906a6f9e98f2527))
+
 ## [11.0.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v10.0.0...v11.0.0) (2026-08-07)
 
 
