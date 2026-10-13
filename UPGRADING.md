@@ -2,6 +2,33 @@
 
 This document captures required refactoring on your part when upgrading to a module version that contains breaking changes.
 
+## Upgrading to v11.1.0
+
+### Key Changes v11.1.0
+
+Not a breaking release: with the defaults the module behaves as before, its own `aws.account` provider assuming `AWSControlTowerExecution` in every run phase. The new `account_provider_roles` variable lets the plan phase assume a module-created read-only role instead, see [the README](README.md#the-modules-own-access-to-the-account). New accounts can enable it in one go; accounts that already exist need the steps below, because the role is created by the apply phase and a plan cannot assume a role that does not exist yet.
+
+### How to upgrade v11.1.0
+
+Enable the two flags in separate runs, verifying a clean plan and apply at each step. Each step can be undone by reverting it.
+
+1. Allow the plan-phase role to assume the read-only role. The workspace running this module authenticates to AWS with its own OIDC roles; its plan phase runs as the role behind `TFC_AWS_PLAN_ROLE_ARN` (or `TFC_AWS_RUN_ROLE_ARN` when the workspace has no phase-specific roles). The module's `aws.account` provider assumes a role in each vended account *from* that role (role chaining), which is why that role already carries an `sts:AssumeRole` allow on `arn:aws:iam::*:role/AWSControlTowerExecution`. Add the same allow for the read-only role:
+
+   ```json
+   {
+     "Effect": "Allow",
+     "Action": "sts:AssumeRole",
+     "Resource": "arn:aws:iam::*:role/AVMPlanReadOnlyRole"
+   }
+   ```
+
+   With a non-default `var.path` or `plan.name` the resource is `arn:aws:iam::*:role<path><name>`. A role with `AdministratorAccess` already has this allow.
+2. Set `account_provider_roles.plan.create = true`, with `trusted_role_arns` naming the plan-phase role: the plan is unchanged, the apply creates the read-only role in every account managed by the configuration.
+3. Set `account_provider_roles.plan.assume = true`: the plan phase now assumes the read-only role, the apply phase is unchanged.
+4. Optionally, remove the `sts:AssumeRole` allow on `arn:aws:iam::*:role/AWSControlTowerExecution` from the plan-phase role. The plan no longer uses it. As long as it stays, anyone who can trigger a plan still reaches `AdministratorAccess` in every vended account, because a plan runs the configuration's code before the apply gate and before any policy checks. Keep the allow on the apply-phase role. This step is only possible when plan and apply use different roles; a single run role shared by both phases has to keep it for the apply.
+
+The flags are set per module instance, so steps 2 and 3 can be rolled out account by account, and an account whose role is missing is recovered by setting `plan.assume = false` for that instance alone, planning and applying, and setting it back.
+
 ## Upgrading to v11.0.0
 
 ### Key Changes v11.0.0

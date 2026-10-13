@@ -30,6 +30,27 @@ variable "account" {
   description = "AWS account settings"
 }
 
+variable "account_provider_roles" {
+  type = object({
+    apply_name = optional(string, "AWSControlTowerExecution")
+    plan = optional(object({
+      create            = optional(bool, false)
+      assume            = optional(bool, false)
+      name              = optional(string, "AVMPlanReadOnlyRole")
+      trusted_role_arns = optional(set(string), [])
+      policy_arns       = optional(set(string), [])
+      policy            = optional(string)
+    }), {})
+  })
+  default     = {}
+  description = "Roles this module's own `aws.account` provider assumes in the account: `apply_name` during apply (and during plan until `plan.assume` is set), `plan.name` during plan once `plan.assume` is set. `plan.create` creates that role under `var.path` with the reads this module needs, trusting `plan.trusted_role_arns`. New accounts can set `create` and `assume` together; existing accounts need `create` applied first, see UPGRADING.md."
+
+  validation {
+    condition     = !var.account_provider_roles.plan.create || length(var.account_provider_roles.plan.trusted_role_arns) > 0
+    error_message = "account_provider_roles.plan.trusted_role_arns must name at least one principal when the plan role is created."
+  }
+}
+
 variable "account_variable_set" {
   type = object({
     name                           = optional(string)

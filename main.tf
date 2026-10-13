@@ -45,6 +45,21 @@ locals {
 # AWS Account & Settings
 ################################################################################
 
+locals {
+  # The plan role is created under `var.path`, so its ARN carries that path; the apply role is a
+  # landing zone role at the root path.
+  account_apply_role_arn = "arn:aws:iam::${module.account.id}:role/${var.account_provider_roles.apply_name}"
+  account_plan_role_arn  = "arn:aws:iam::${module.account.id}:role${var.path}${var.account_provider_roles.plan.name}"
+
+  # The role this module's own provider assumes in the vended account. The plan phase
+  # (terraform.applying == false) uses the read-only plan role once `plan.assume` is set; the
+  # apply phase always uses the apply role. `terraform.applying` is ephemeral, so this local is
+  # too, and may only feed the provider block below.
+  account_provider_role_arn = (
+    var.account_provider_roles.plan.assume && !terraform.applying
+  ) ? local.account_plan_role_arn : local.account_apply_role_arn
+}
+
 provider "aws" {
   alias  = "account"
   region = var.tfe_workspace.default_region
@@ -54,8 +69,47 @@ provider "aws" {
   }
 
   assume_role {
-    role_arn = "arn:aws:iam::${module.account.id}:role/AWSControlTowerExecution"
+    role_arn = local.account_provider_role_arn
   }
+}
+
+################################################################################
+# Read-only role for this module's own plan phase
+################################################################################
+
+# Exactly the reads this module's resources (and the pipeline roles it creates) need to refresh,
+# extended with whatever the caller passes in `plan.policy`.
+data "aws_iam_policy_document" "account_plan_role" {
+  #checkov:skip=CKV_AWS_356:Read-only refresh of every IAM resource this module manages; iam:ListAccountAliases cannot be resource-scoped
+  count = var.account_provider_roles.plan.create ? 1 : 0
+
+  provider = aws.account
+
+  source_policy_documents = var.account_provider_roles.plan.policy != null ? [var.account_provider_roles.plan.policy] : []
+
+  statement {
+    sid       = "AvmModuleReads"
+    actions   = ["iam:Get*", "iam:List*", "account:GetAlternateContact"]
+    resources = ["*"]
+  }
+}
+
+module "account_plan_role" {
+  source  = "schubergphilis-ep/mcaf-role/aws"
+  version = "~> 0.6.0"
+
+  count = var.account_provider_roles.plan.create ? 1 : 0
+
+  providers = { aws = aws.account }
+
+  description           = "Read-only role for the plan phase of the configuration that manages this account with terraform-aws-mcaf-avm"
+  name                  = var.account_provider_roles.plan.name
+  path                  = var.path
+  policy_arns           = var.account_provider_roles.plan.policy_arns
+  postfix               = false
+  principal_identifiers = var.account_provider_roles.plan.trusted_role_arns
+  principal_type        = "AWS"
+  role_policy           = data.aws_iam_policy_document.account_plan_role[0].json
 }
 
 module "account" {
