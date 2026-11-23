@@ -405,9 +405,9 @@ module "aws_account" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws.account"></a> [aws.account](#provider\_aws.account) | 6.68.0 |
-| <a name="provider_tfe"></a> [tfe](#provider\_tfe) | 0.82.0 |
-| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.4.1 |
+| <a name="provider_aws.account"></a> [aws.account](#provider\_aws.account) | >= 4.9.0 |
+| <a name="provider_tfe"></a> [tfe](#provider\_tfe) | >= 0.70.0 |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | >= 4.0.4 |
 
 ## Modules
 

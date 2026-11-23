@@ -34,10 +34,7 @@ output "tfe_workspace_id" {
 }
 
 output "tfe_workspaces" {
-  value = concat(
-    try([module.tfe_workspace[0]], []),
-    try(values(module.additional_tfe_workspaces), []),
-  )
+  value       = concat(module.tfe_workspace[*], values(module.additional_tfe_workspaces))
   description = "List of Terraform Cloud workspaces"
 }
 
