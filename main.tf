@@ -337,10 +337,12 @@ module "tfe_project_auth" {
   }
 }
 
-data "tfe_team" "default" {
-  for_each = local.tfe_project_enabled ? toset([for name, team in var.tfe_project.team_access : name if team.team_id == null]) : toset([])
+// Every team is listed once instead of looking up each name: which teams need a lookup depends on
+// `team_id`, which is unknown during the plan for a team created in the same run, and the keys of a
+// for_each have to be known.
+data "tfe_teams" "default" {
+  count = local.tfe_project_enabled && length(var.tfe_project.team_access) > 0 ? 1 : 0
 
-  name         = each.value
   organization = var.tfe_workspace.organization
 }
 
@@ -349,32 +351,41 @@ resource "tfe_team_project_access" "default" {
 
   access     = each.value.access
   project_id = tfe_project.default[0].id
-  team_id    = each.value.team_id != null ? each.value.team_id : data.tfe_team.default[each.key].id
+  team_id    = each.value.team_id != null ? each.value.team_id : lookup(data.tfe_teams.default[0].ids, each.key, null)
 
+  // The provider keeps the previous value of a custom permission that is left out, so each one falls
+  // back to the provider default explicitly: removing a permission from `team_access` revokes it.
   dynamic "project_access" {
-    for_each = each.value.project_access[*]
+    for_each = each.value.access == "custom" ? [true] : []
 
     content {
-      settings      = project_access.value.settings
-      teams         = project_access.value.teams
-      variable_sets = project_access.value.variable_sets
+      settings      = coalesce(try(each.value.project_access.settings, null), "read")
+      teams         = coalesce(try(each.value.project_access.teams, null), "none")
+      variable_sets = coalesce(try(each.value.project_access.variable_sets, null), "none")
     }
   }
 
   dynamic "workspace_access" {
-    for_each = each.value.workspace_access[*]
+    for_each = each.value.access == "custom" ? [true] : []
 
     content {
-      create           = workspace_access.value.create
-      delete           = workspace_access.value.delete
-      locking          = workspace_access.value.locking
-      move             = workspace_access.value.move
-      policy_overrides = workspace_access.value.policy_overrides
-      run_tasks        = workspace_access.value.run_tasks
-      runs             = workspace_access.value.runs
-      sentinel_mocks   = workspace_access.value.sentinel_mocks
-      state_versions   = workspace_access.value.state_versions
-      variables        = workspace_access.value.variables
+      create           = coalesce(try(each.value.workspace_access.create, null), false)
+      delete           = coalesce(try(each.value.workspace_access.delete, null), false)
+      locking          = coalesce(try(each.value.workspace_access.locking, null), false)
+      move             = coalesce(try(each.value.workspace_access.move, null), false)
+      policy_overrides = coalesce(try(each.value.workspace_access.policy_overrides, null), false)
+      run_tasks        = coalesce(try(each.value.workspace_access.run_tasks, null), false)
+      runs             = coalesce(try(each.value.workspace_access.runs, null), "read")
+      sentinel_mocks   = coalesce(try(each.value.workspace_access.sentinel_mocks, null), "none")
+      state_versions   = coalesce(try(each.value.workspace_access.state_versions, null), "none")
+      variables        = coalesce(try(each.value.workspace_access.variables, null), "none")
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = each.value.team_id != null || contains(keys(data.tfe_teams.default[0].ids), each.key)
+      error_message = "Team \"${each.key}\" was not found in the organization. Set tfe_project.team_access[\"${each.key}\"].team_id when the team is created in the same run."
     }
   }
 }
