@@ -338,43 +338,43 @@ module "tfe_project_auth" {
 }
 
 data "tfe_team" "default" {
-  for_each = toset(keys(var.tfe_project.team_access))
+  for_each = local.tfe_project_enabled ? toset([for name, team in var.tfe_project.team_access : name if team.team_id == null]) : toset([])
 
   name         = each.value
   organization = var.tfe_workspace.organization
 }
 
 resource "tfe_team_project_access" "default" {
-  for_each = (var.tfe_project.enabled && (length(keys(var.tfe_project.team_access)) > 0)) ? var.tfe_project.team_access : {}
+  for_each = local.tfe_project_enabled ? var.tfe_project.team_access : {}
 
   access     = each.value.access
-  team_id    = data.tfe_team.default[each.key].id
   project_id = tfe_project.default[0].id
+  team_id    = each.value.team_id != null ? each.value.team_id : data.tfe_team.default[each.key].id
 
   dynamic "project_access" {
-    for_each = each.value.project_access != null ? { create = true } : {}
+    for_each = each.value.project_access[*]
 
     content {
-      settings      = each.value.project_access["settings"]
-      teams         = each.value.project_access["teams"]
-      variable_sets = each.value.project_access["variable_sets"]
+      settings      = project_access.value.settings
+      teams         = project_access.value.teams
+      variable_sets = project_access.value.variable_sets
     }
   }
 
   dynamic "workspace_access" {
-    for_each = each.value.workspace_access != null ? { create = true } : {}
+    for_each = each.value.workspace_access[*]
 
     content {
-      create           = each.value.workspace_access["create"]
-      delete           = each.value.workspace_access["delete"]
-      locking          = each.value.workspace_access["locking"]
-      move             = each.value.workspace_access["move"]
-      policy_overrides = each.value.workspace_access["policy_overrides"]
-      run_tasks        = each.value.workspace_access["run_tasks"]
-      runs             = each.value.workspace_access["runs"]
-      sentinel_mocks   = each.value.workspace_access["sentinel_mocks"]
-      state_versions   = each.value.workspace_access["state_versions"]
-      variables        = each.value.workspace_access["variables"]
+      create           = workspace_access.value.create
+      delete           = workspace_access.value.delete
+      locking          = workspace_access.value.locking
+      move             = workspace_access.value.move
+      policy_overrides = workspace_access.value.policy_overrides
+      run_tasks        = workspace_access.value.run_tasks
+      runs             = workspace_access.value.runs
+      sentinel_mocks   = workspace_access.value.sentinel_mocks
+      state_versions   = workspace_access.value.state_versions
+      variables        = workspace_access.value.variables
     }
   }
 }

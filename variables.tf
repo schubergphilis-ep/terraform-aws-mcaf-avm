@@ -144,28 +144,31 @@ variable "tfe_project" {
     }), {})
 
     team_access = optional(map(object({
-      access = optional(string, null),
+      access  = string
+      team_id = optional(string)
+
       project_access = optional(object({
-        settings      = optional(string, null),
-        teams         = optional(string, null),
-        variable_sets = optional(string, null),
-      }), null),
+        settings      = optional(string)
+        teams         = optional(string)
+        variable_sets = optional(string)
+      }))
+
       workspace_access = optional(object({
-        create           = optional(bool, null),
-        delete           = optional(bool, null),
-        locking          = optional(bool, null),
-        move             = optional(bool, null),
-        policy_overrides = optional(bool, null),
-        run_tasks        = optional(bool, null),
-        runs             = optional(string, null),
-        sentinel_mocks   = optional(string, null),
-        state_versions   = optional(string, null),
-        variables        = optional(string, null)
-      }), null)
+        create           = optional(bool)
+        delete           = optional(bool)
+        locking          = optional(bool)
+        move             = optional(bool)
+        policy_overrides = optional(bool)
+        run_tasks        = optional(bool)
+        runs             = optional(string)
+        sentinel_mocks   = optional(string)
+        state_versions   = optional(string)
+        variables        = optional(string)
+      }))
     })), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles. `team_access` grants teams access to the project and all of its workspaces, keyed by team name; set `team_id` to skip the lookup by name, which is needed when the team is created in the same run. `project_access` and `workspace_access` can only be set when `access` is \"custom\", and any permission left unset gets the provider default."
 
   validation {
     condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
@@ -206,23 +209,22 @@ variable "tfe_project" {
   }
 
   validation {
-    condition = (
-      var.tfe_project.team_access == null ||
-      alltrue([
-        for team, config in var.tfe_project.team_access : (
-          (
-            contains(["admin", "maintain", "read", "write"], config.access) &&
-            config.project_access == null && config.workspace_access == null
-          ) ||
-          (
-            config.access == "custom" &&
-            (config.project_access != null && config.workspace_access != null)
-          )
-        )
-      ])
-    )
+    condition = alltrue([
+      for team in values(var.tfe_project.team_access) : contains(["admin", "maintain", "write", "read", "custom"], team.access)
+    ])
+    error_message = "tfe_project.team_access access must be one of \"admin\", \"maintain\", \"write\", \"read\" or \"custom\"."
+  }
 
-    error_message = "Team access configuration is invalid. Each team must have a valid access (allowed values are 'admin', 'maintain', 'read', 'write', 'custom'), both project_access and workspace_access must be set if access is 'custom' and null if using a predefined access level."
+  validation {
+    condition = alltrue([
+      for team in values(var.tfe_project.team_access) : team.access == "custom" || (team.project_access == null && team.workspace_access == null)
+    ])
+    error_message = "tfe_project.team_access project_access and workspace_access can only be set when access is \"custom\"."
+  }
+
+  validation {
+    condition     = length(var.tfe_project.team_access) == 0 || coalesce(var.tfe_project.enabled, var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
+    error_message = "tfe_project.team_access requires the TFE project to be enabled, through tfe_project.enabled or project-scoped authentication."
   }
 }
 
