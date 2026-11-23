@@ -337,9 +337,7 @@ module "tfe_project_auth" {
   }
 }
 
-// Every team is listed once instead of looking up each name: which teams need a lookup depends on
-// `team_id`, which is unknown during the plan for a team created in the same run, and the keys of a
-// for_each have to be known.
+// Not a lookup per team: its for_each keys would depend on `team_id`, which is unknown at plan for a team created in the same run.
 data "tfe_teams" "default" {
   count = local.tfe_project_enabled && length(var.tfe_project.team_access) > 0 ? 1 : 0
 
@@ -353,8 +351,7 @@ resource "tfe_team_project_access" "default" {
   project_id = tfe_project.default[0].id
   team_id    = each.value.team_id != null ? each.value.team_id : lookup(data.tfe_teams.default[0].ids, each.key, null)
 
-  // The provider keeps the previous value of a custom permission that is left out, so both blocks
-  // are always set in full: removing a permission from `team_access` then revokes it.
+  // The provider keeps the previous value of an omitted custom permission, so every one is always set.
   dynamic "project_access" {
     for_each = each.value.access == "custom" ? [each.value.project_access] : []
 

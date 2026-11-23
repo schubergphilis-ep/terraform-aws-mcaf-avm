@@ -17,7 +17,6 @@ resource "tfe_team" "auditors" {
   name = "my-aws-account-auditors"
 }
 
-# Team access is only granted on the TFE project created by this module.
 module "aws_account" {
   source = "../.."
   name   = "my-aws-account"
