@@ -208,13 +208,7 @@ variable "tfe_project" {
     error_message = "Default agent pool ID can only be set if default execution mode is 'agent'"
   }
 
-  validation {
-    condition = alltrue([
-      for team in values(var.tfe_project.team_access) : contains(["admin", "maintain", "write", "read", "custom"], team.access)
-    ])
-    error_message = "tfe_project.team_access access must be one of \"admin\", \"maintain\", \"write\", \"read\" or \"custom\"."
-  }
-
+  // The provider validates every value itself, but silently accepts these blocks with a fixed access level.
   validation {
     condition = alltrue([
       for team in values(var.tfe_project.team_access) : team.access == "custom" || (team.project_access == null && team.workspace_access == null)
