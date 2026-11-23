@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [11.1.1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v11.1.0...v11.1.1) (2026-11-23)
+
+
+### 🐛 Fixes
+
+* keep the tfe_workspaces output known when a workspace is created ([#11](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/issues/11)) ([54f97d1](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/54f97d1c1861dac957b7fdb83be55ed67ffa0b1f))
+
 ## [11.1.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v11.0.0...v11.1.0) (2026-10-13)
 
 
