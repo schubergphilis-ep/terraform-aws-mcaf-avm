@@ -353,32 +353,32 @@ resource "tfe_team_project_access" "default" {
   project_id = tfe_project.default[0].id
   team_id    = each.value.team_id != null ? each.value.team_id : lookup(data.tfe_teams.default[0].ids, each.key, null)
 
-  // The provider keeps the previous value of a custom permission that is left out, so each one falls
-  // back to the provider default explicitly: removing a permission from `team_access` revokes it.
+  // The provider keeps the previous value of a custom permission that is left out, so both blocks
+  // are always set in full: removing a permission from `team_access` then revokes it.
   dynamic "project_access" {
-    for_each = each.value.access == "custom" ? [true] : []
+    for_each = each.value.access == "custom" ? [each.value.project_access] : []
 
     content {
-      settings      = coalesce(try(each.value.project_access.settings, null), "read")
-      teams         = coalesce(try(each.value.project_access.teams, null), "none")
-      variable_sets = coalesce(try(each.value.project_access.variable_sets, null), "none")
+      settings      = project_access.value.settings
+      teams         = project_access.value.teams
+      variable_sets = project_access.value.variable_sets
     }
   }
 
   dynamic "workspace_access" {
-    for_each = each.value.access == "custom" ? [true] : []
+    for_each = each.value.access == "custom" ? [each.value.workspace_access] : []
 
     content {
-      create           = coalesce(try(each.value.workspace_access.create, null), false)
-      delete           = coalesce(try(each.value.workspace_access.delete, null), false)
-      locking          = coalesce(try(each.value.workspace_access.locking, null), false)
-      move             = coalesce(try(each.value.workspace_access.move, null), false)
-      policy_overrides = coalesce(try(each.value.workspace_access.policy_overrides, null), false)
-      run_tasks        = coalesce(try(each.value.workspace_access.run_tasks, null), false)
-      runs             = coalesce(try(each.value.workspace_access.runs, null), "read")
-      sentinel_mocks   = coalesce(try(each.value.workspace_access.sentinel_mocks, null), "none")
-      state_versions   = coalesce(try(each.value.workspace_access.state_versions, null), "none")
-      variables        = coalesce(try(each.value.workspace_access.variables, null), "none")
+      create           = workspace_access.value.create
+      delete           = workspace_access.value.delete
+      locking          = workspace_access.value.locking
+      move             = workspace_access.value.move
+      policy_overrides = workspace_access.value.policy_overrides
+      run_tasks        = workspace_access.value.run_tasks
+      runs             = workspace_access.value.runs
+      sentinel_mocks   = workspace_access.value.sentinel_mocks
+      state_versions   = workspace_access.value.state_versions
+      variables        = workspace_access.value.variables
     }
   }
 
