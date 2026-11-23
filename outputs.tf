@@ -34,10 +34,10 @@ output "tfe_workspace_id" {
 }
 
 output "tfe_workspaces" {
-  value = concat(
-    try([module.tfe_workspace[0]], []),
-    try(values(module.additional_tfe_workspaces), []),
-  )
+  # No try(): try() returns a wholly unknown value as soon as any attribute of its argument is unknown,
+  # which made this whole list unknown on every plan that creates a workspace and broke callers that use
+  # it in for_each. The splat and values() already yield [] when no workspace is created.
+  value       = concat(module.tfe_workspace[*], values(module.additional_tfe_workspaces))
   description = "List of Terraform Cloud workspaces"
 }
 
