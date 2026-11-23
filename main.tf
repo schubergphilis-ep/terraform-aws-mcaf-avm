@@ -337,6 +337,56 @@ module "tfe_project_auth" {
   }
 }
 
+// Not a lookup per team: its for_each keys would depend on `team_id`, which is unknown at plan for a team created in the same run.
+data "tfe_teams" "default" {
+  count = local.tfe_project_enabled && length(var.tfe_project.team_access) > 0 ? 1 : 0
+
+  organization = var.tfe_workspace.organization
+}
+
+resource "tfe_team_project_access" "default" {
+  for_each = local.tfe_project_enabled ? var.tfe_project.team_access : {}
+
+  access     = each.value.access
+  project_id = tfe_project.default[0].id
+  team_id    = each.value.team_id != null ? each.value.team_id : lookup(data.tfe_teams.default[0].ids, each.key, null)
+
+  // The provider keeps the previous value of an omitted custom permission, so every one is always set.
+  dynamic "project_access" {
+    for_each = each.value.access == "custom" ? [each.value.project_access] : []
+
+    content {
+      settings      = project_access.value.settings
+      teams         = project_access.value.teams
+      variable_sets = project_access.value.variable_sets
+    }
+  }
+
+  dynamic "workspace_access" {
+    for_each = each.value.access == "custom" ? [each.value.workspace_access] : []
+
+    content {
+      create           = workspace_access.value.create
+      delete           = workspace_access.value.delete
+      locking          = workspace_access.value.locking
+      move             = workspace_access.value.move
+      policy_overrides = workspace_access.value.policy_overrides
+      run_tasks        = workspace_access.value.run_tasks
+      runs             = workspace_access.value.runs
+      sentinel_mocks   = workspace_access.value.sentinel_mocks
+      state_versions   = workspace_access.value.state_versions
+      variables        = workspace_access.value.variables
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = each.value.team_id != null || contains(keys(data.tfe_teams.default[0].ids), each.key)
+      error_message = "Team \"${each.key}\" was not found in the organization. Set tfe_project.team_access[\"${each.key}\"].team_id when the team is created in the same run."
+    }
+  }
+}
+
 ################################################################################
 # Terraform Cloud Workspace(s)
 ################################################################################

@@ -142,9 +142,33 @@ variable "tfe_project" {
       clear_text_hcl_variables       = optional(map(string), {})
       clear_text_terraform_variables = optional(map(string), {})
     }), {})
+
+    team_access = optional(map(object({
+      access  = string
+      team_id = optional(string)
+
+      project_access = optional(object({
+        settings      = optional(string, "read")
+        teams         = optional(string, "none")
+        variable_sets = optional(string, "none")
+      }), {})
+
+      workspace_access = optional(object({
+        create           = optional(bool, false)
+        delete           = optional(bool, false)
+        locking          = optional(bool, false)
+        move             = optional(bool, false)
+        policy_overrides = optional(bool, false)
+        run_tasks        = optional(bool, false)
+        runs             = optional(string, "read")
+        sentinel_mocks   = optional(string, "none")
+        state_versions   = optional(string, "none")
+        variables        = optional(string, "none")
+      }), {})
+    })), {})
   })
   default     = {}
-  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles."
+  description = "TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication_settings.scope is \"project\"; set it to true while the scope is \"workspace\" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles. `team_access` grants teams access to the project and all of its workspaces, keyed by team name; set `team_id` to skip the lookup by name, which is needed when the team is created in the same run. `project_access` and `workspace_access` only apply when `access` is \"custom\"; any permission left unset gets the provider default."
 
   validation {
     condition     = var.tfe_project.enable_project_scoped_authentication != false || var.authentication_settings.scope != "project"
@@ -182,6 +206,11 @@ variable "tfe_project" {
       var.tfe_project.default_execution_mode == "agent"
     )
     error_message = "Default agent pool ID can only be set if default execution mode is 'agent'"
+  }
+
+  validation {
+    condition     = length(var.tfe_project.team_access) == 0 || coalesce(var.tfe_project.enabled, var.tfe_project.enable_project_scoped_authentication, var.authentication_settings.scope == "project")
+    error_message = "tfe_project.team_access requires the TFE project to be enabled, through tfe_project.enabled or project-scoped authentication."
   }
 }
 

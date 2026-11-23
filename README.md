@@ -398,7 +398,7 @@ module "aws_account" {
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.9.0 |
 | <a name="requirement_mcaf"></a> [mcaf](#requirement\_mcaf) | >= 0.4.5 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0.0 |
-| <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) | >= 0.70.0 |
+| <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) | >= 0.78.0 |
 | <a name="requirement_tls"></a> [tls](#requirement\_tls) | >= 4.0.4 |
 
 ## Providers
@@ -406,7 +406,7 @@ module "aws_account" {
 | Name | Version |
 |------|---------|
 | <a name="provider_aws.account"></a> [aws.account](#provider\_aws.account) | >= 4.9.0 |
-| <a name="provider_tfe"></a> [tfe](#provider\_tfe) | >= 0.70.0 |
+| <a name="provider_tfe"></a> [tfe](#provider\_tfe) | >= 0.78.0 |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | >= 4.0.4 |
 
 ## Modules
@@ -434,11 +434,13 @@ module "aws_account" {
 | [tfe_project.default](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/project) | resource |
 | [tfe_project_settings.default](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/project_settings) | resource |
 | [tfe_project_variable_set.default](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/project_variable_set) | resource |
+| [tfe_team_project_access.default](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_project_access) | resource |
 | [tfe_variable.account_variable_set_clear_text_env_variables](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable.account_variable_set_clear_text_hcl_variables](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable.account_variable_set_clear_text_terraform_variables](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable) | resource |
 | [tfe_variable_set.account](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/variable_set) | resource |
 | [aws_iam_policy_document.account_plan_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [tfe_teams.default](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/data-sources/teams) | data source |
 | [tls_certificate.oidc_certificate](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) | data source |
 
 ## Inputs
@@ -455,7 +457,7 @@ module "aws_account" {
 | <a name="input_create_default_workspace"></a> [create\_default\_workspace](#input\_create\_default\_workspace) | Set to false to skip creating default workspace | `bool` | `true` | no |
 | <a name="input_path"></a> [path](#input\_path) | Optional path for all IAM users, user groups, roles, and customer managed policies created by this module | `string` | `"/"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to all resources | `map(string)` | `{}` | no |
-| <a name="input_tfe_project"></a> [tfe\_project](#input\_tfe\_project) | TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication\_settings.scope is "project"; set it to true while the scope is "workspace" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles. | <pre>object({<br/>    enabled = optional(bool) # defaults to true when project-scoped authentication is enabled<br/>    name    = optional(string)<br/><br/>    default_agent_pool_id                = optional(string)<br/>    default_execution_mode               = optional(string)<br/>    enable_project_scoped_authentication = optional(bool)   # defaults to true when authentication_settings.scope is "project"<br/>    role_name                            = optional(string) # names the project-scoped roles, falls back to authentication_settings.role_name<br/>    variable_set_ids                     = optional(map(string), {})<br/><br/>    variable_set = optional(object({<br/>      clear_text_env_variables       = optional(map(string), {})<br/>      clear_text_hcl_variables       = optional(map(string), {})<br/>      clear_text_terraform_variables = optional(map(string), {})<br/>    }), {})<br/>  })</pre> | `{}` | no |
+| <a name="input_tfe_project"></a> [tfe\_project](#input\_tfe\_project) | TFE project configuration including variable sets and authentication settings. If no name is provided, var.name will be used for the project name & variable set name. `enable_project_scoped_authentication` defaults to true when authentication\_settings.scope is "project"; set it to true while the scope is "workspace" to create project-scoped roles in addition to the per-workspace roles. `enabled` defaults to true whenever project-scoped authentication is enabled. `role_name` names the project-scoped roles and falls back to `authentication_settings.role_name` when unset; it must be set explicitly when project-scoped roles are created alongside the default workspace's roles. `team_access` grants teams access to the project and all of its workspaces, keyed by team name; set `team_id` to skip the lookup by name, which is needed when the team is created in the same run. `project_access` and `workspace_access` only apply when `access` is "custom"; any permission left unset gets the provider default. | <pre>object({<br/>    enabled = optional(bool) # defaults to true when project-scoped authentication is enabled<br/>    name    = optional(string)<br/><br/>    default_agent_pool_id                = optional(string)<br/>    default_execution_mode               = optional(string)<br/>    enable_project_scoped_authentication = optional(bool)   # defaults to true when authentication_settings.scope is "project"<br/>    role_name                            = optional(string) # names the project-scoped roles, falls back to authentication_settings.role_name<br/>    variable_set_ids                     = optional(map(string), {})<br/><br/>    variable_set = optional(object({<br/>      clear_text_env_variables       = optional(map(string), {})<br/>      clear_text_hcl_variables       = optional(map(string), {})<br/>      clear_text_terraform_variables = optional(map(string), {})<br/>    }), {})<br/><br/>    team_access = optional(map(object({<br/>      access  = string<br/>      team_id = optional(string)<br/><br/>      project_access = optional(object({<br/>        settings      = optional(string, "read")<br/>        teams         = optional(string, "none")<br/>        variable_sets = optional(string, "none")<br/>      }), {})<br/><br/>      workspace_access = optional(object({<br/>        create           = optional(bool, false)<br/>        delete           = optional(bool, false)<br/>        locking          = optional(bool, false)<br/>        move             = optional(bool, false)<br/>        policy_overrides = optional(bool, false)<br/>        run_tasks        = optional(bool, false)<br/>        runs             = optional(string, "read")<br/>        sentinel_mocks   = optional(string, "none")<br/>        state_versions   = optional(string, "none")<br/>        variables        = optional(string, "none")<br/>      }), {})<br/>    })), {})<br/>  })</pre> | `{}` | no |
 
 ## Outputs
 
