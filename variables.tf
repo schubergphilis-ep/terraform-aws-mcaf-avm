@@ -300,6 +300,7 @@ variable "additional_tfe_workspaces" {
         variables         = string
         workspace_locking = bool
       }), null)
+      team_id = optional(string, null)
     })), null)
   }))
   default     = {}
@@ -410,6 +411,7 @@ variable "tfe_workspace" {
         variables         = string
         workspace_locking = bool
       }), null)
+      team_id = optional(string, null)
     })), {})
   })
   description = "TFE workspace settings"
