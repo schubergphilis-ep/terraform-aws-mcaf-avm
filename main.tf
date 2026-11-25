@@ -314,7 +314,7 @@ module "tfe_project_auth" {
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws//modules/auth"
-  version = "~> 6.0.0"
+  version = "~> 6.1.0"
 
   set_terraform_role_arn_variables = var.authentication_settings.set_terraform_role_arn_variables
   terraform_organization           = var.tfe_workspace.organization
@@ -397,7 +397,7 @@ module "tfe_workspace" {
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws"
-  version = "~> 6.0.0"
+  version = "~> 6.1.0"
 
   agent_pool_id                                = var.tfe_workspace.agent_pool_id
   allow_destroy_plan                           = var.tfe_workspace.allow_destroy_plan
@@ -459,7 +459,7 @@ module "additional_tfe_workspaces" {
   providers = { aws = aws.account }
 
   source  = "schubergphilis-ep/mcaf-workspace/aws"
-  version = "~> 6.0.0"
+  version = "~> 6.1.0"
 
   agent_pool_id                                = each.value.agent_pool_id != null ? each.value.agent_pool_id : var.tfe_workspace.agent_pool_id
   allow_destroy_plan                           = each.value.allow_destroy_plan != null ? each.value.allow_destroy_plan : var.tfe_workspace.allow_destroy_plan

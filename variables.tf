@@ -291,7 +291,9 @@ variable "additional_tfe_workspaces" {
     })), null)
 
     team_access = optional(map(object({
-      access = optional(string, null),
+      access  = optional(string, null)
+      team_id = optional(string, null)
+
       permissions = optional(object({
         run_tasks         = bool
         runs              = string
@@ -401,7 +403,9 @@ variable "tfe_workspace" {
     })), {})
 
     team_access = optional(map(object({
-      access = optional(string, null),
+      access  = optional(string, null)
+      team_id = optional(string, null)
+
       permissions = optional(object({
         run_tasks         = bool
         runs              = string
