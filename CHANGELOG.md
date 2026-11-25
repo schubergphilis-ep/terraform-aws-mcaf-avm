@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [11.3.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v11.2.0...v11.3.0) (2026-11-25)
+
+
+### 🚀 Features
+
+* support team_id in workspace team_access for teams created in the same run ([#14](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/issues/14)) ([27cef16](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/commit/27cef16e002ac673bb369993e8b1d8646af0c2c9))
+
 ## [11.2.0](https://github.com/schubergphilis-ep/terraform-aws-mcaf-avm/compare/v11.1.1...v11.2.0) (2026-11-23)
 
 
